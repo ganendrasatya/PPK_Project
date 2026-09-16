@@ -18,6 +18,11 @@
 
             <nav class="flex items-center gap-4">
                 <span class="text-sm text-gray-600">Halo, {{ Auth::user()->name }}</span>
+                @if (Auth::user()->isAdmin())
+                    <a href="{{ route('admin.dashboard') }}" class="px-4 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition">
+                        Admin Panel
+                    </a>
+                @endif
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition">

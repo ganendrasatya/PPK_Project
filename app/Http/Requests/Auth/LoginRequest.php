@@ -50,6 +50,18 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        if (Auth::user()->status !== 'verified') {
+            $status = Auth::user()->status;
+
+            Auth::logout();
+
+            throw ValidationException::withMessages([
+                'email' => $status === 'pending'
+                    ? 'Akun Anda belum diverifikasi oleh admin.'
+                    : 'Akun Anda ditolak oleh admin.',
+            ]);
+        }
+
         RateLimiter::clear($this->throttleKey());
     }
 
