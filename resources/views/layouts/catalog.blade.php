@@ -8,6 +8,7 @@
     <title>{{ config('app.name', 'ReservasiFasilitas') }}</title>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
 <body class="font-sans antialiased text-gray-900 bg-gray-50 min-h-screen flex flex-col">
     <!-- Navbar -->

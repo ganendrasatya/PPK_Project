@@ -2,8 +2,8 @@
     <!-- A. Hero Section -->
     <section class="bg-gradient-to-br from-teal-800 to-teal-600 text-white rounded-b-[2rem] md:rounded-b-[3xl] overflow-hidden py-16 px-8 relative">
         <div class="max-w-6xl mx-auto relative z-10">
-            <span class="inline-block bg-teal-900/50 text-teal-100 rounded-full px-4 py-1.5 text-sm font-medium mb-6">
-                🏢 Sistem Peminjaman Fasilitas Kampus Terpadu
+            <span class="inline-flex items-center gap-1.5 bg-teal-900/50 text-teal-100 rounded-full px-4 py-1.5 text-sm font-medium mb-6">
+                <i class="ph ph-buildings text-lg"></i> Sistem Peminjaman Fasilitas Kampus Terpadu
             </span>
             <h1 class="text-4xl md:text-5xl font-bold max-w-2xl leading-tight">
                 Reservasi fasilitas kampus dalam hitungan menit.
@@ -12,16 +12,16 @@
                 Jelajahi ketersediaan lapangan, ruang kelas, dan laboratorium modern. Pesan slot 30 menit dengan deteksi bentrok otomatis — tanpa antrean fisik dan birokrasi manual.
             </p>
             <div class="flex flex-wrap gap-3 mt-6">
-                <span class="bg-teal-700/50 rounded-full px-4 py-1.5 text-sm font-medium">📋 {{ $facilities->total() }}+ Fasilitas Terdaftar</span>
-                <span class="bg-teal-700/50 rounded-full px-4 py-1.5 text-sm font-medium">⏱ Slot 30 Menit (07.00–18.00 WIB)</span>
-                <span class="bg-teal-700/50 rounded-full px-4 py-1.5 text-sm font-medium">✅ Persetujuan Petugas Cepat</span>
+                <span class="inline-flex items-center gap-1.5 bg-teal-700/50 rounded-full px-4 py-1.5 text-sm font-medium"><i class="ph ph-clipboard-text text-lg"></i> {{ $facilities->total() }}+ Fasilitas Terdaftar</span>
+                <span class="inline-flex items-center gap-1.5 bg-teal-700/50 rounded-full px-4 py-1.5 text-sm font-medium"><i class="ph ph-clock text-lg"></i> Slot 30 Menit (07.00–18.00 WIB)</span>
+                <span class="inline-flex items-center gap-1.5 bg-teal-700/50 rounded-full px-4 py-1.5 text-sm font-medium"><i class="ph ph-check-circle text-lg"></i> Persetujuan Petugas Cepat</span>
             </div>
             <div class="flex flex-wrap gap-3 mt-8">
                 <a href="#katalog" class="bg-white text-teal-700 font-semibold rounded-lg px-6 py-3 hover:bg-gray-100 transition-colors">
                     Cek Ketersediaan Langsung
                 </a>
-                <a href="#alur" class="border border-white/50 text-white rounded-lg px-6 py-3 hover:bg-white/10 transition-colors">
-                    📋 Panduan Peminjaman
+                <a href="#alur" class="inline-flex items-center gap-2 border border-white/50 text-white rounded-lg px-6 py-3 hover:bg-white/10 transition-colors">
+                    <i class="ph ph-info text-lg"></i> Panduan Peminjaman
                 </a>
             </div>
         </div>
@@ -117,8 +117,8 @@
                         </div>
 
                         <!-- Location Overlay -->
-                        <div class="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm text-white text-xs px-2.5 py-1 rounded-md flex items-center gap-1">
-                            📍 {{ $facility->lokasi }}
+                        <div class="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm text-white text-xs px-2.5 py-1 rounded-md flex items-center gap-1.5">
+                            <i class="ph ph-map-pin text-sm"></i> {{ $facility->lokasi }}
                         </div>
                     </div>
 
@@ -127,13 +127,13 @@
                         <p class="text-sm text-gray-500 mt-1 line-clamp-2 flex-grow">{{ $facility->deskripsi }}</p>
                         
                         <div class="flex flex-wrap gap-x-4 gap-y-2 mt-4 text-sm text-gray-600 font-medium">
-                            <span class="flex items-center gap-1">👥 Kapasitas {{ $facility->kapasitas }} orang</span>
-                            <span class="flex items-center gap-1">⏱ Min. 1 jam / Sesi</span>
+                            <span class="flex items-center gap-1.5"><i class="ph ph-users text-lg text-gray-400"></i> Kapasitas {{ $facility->kapasitas }} orang</span>
+                            <span class="flex items-center gap-1.5"><i class="ph ph-clock text-lg text-gray-400"></i> Min. 1 jam / Sesi</span>
                         </div>
 
                         @if($facility->status === 'dalam_perbaikan')
-                            <div class="mt-3 bg-amber-50 text-amber-700 text-xs px-3 py-2 rounded-lg border border-amber-100 flex items-start gap-2">
-                                ⚠️ Fasilitas sedang dalam pemeliharaan dan tidak dapat dipesan.
+                            <div class="mt-3 bg-amber-50 text-amber-700 text-xs px-3 py-2 rounded-lg border border-amber-100 flex items-start gap-1.5">
+                                <i class="ph ph-warning-circle text-base"></i> Fasilitas sedang dalam pemeliharaan dan tidak dapat dipesan.
                             </div>
                         @endif
 

@@ -33,15 +33,15 @@
                 
                 <ul class="space-y-3 mt-4 text-gray-600 text-sm bg-gray-50 p-4 rounded-xl border border-gray-100">
                     <li class="flex items-start gap-3">
-                        <span class="text-lg">📍</span> 
+                        <i class="ph ph-map-pin text-xl text-teal-600"></i> 
                         <span class="mt-0.5">{{ $facility->lokasi }}</span>
                     </li>
                     <li class="flex items-start gap-3">
-                        <span class="text-lg">👥</span> 
+                        <i class="ph ph-users text-xl text-teal-600"></i> 
                         <span class="mt-0.5">Kapasitas maksimal {{ $facility->kapasitas }} orang</span>
                     </li>
                     <li class="flex items-start gap-3">
-                        <span class="text-lg">🕐</span> 
+                        <i class="ph ph-clock text-xl text-teal-600"></i> 
                         <span class="mt-0.5">Jam Operasional: {{ \Carbon\Carbon::parse($facility->jam_buka)->format('H:i') }} – {{ \Carbon\Carbon::parse($facility->jam_tutup)->format('H:i') }} WIB</span>
                     </li>
                 </ul>
