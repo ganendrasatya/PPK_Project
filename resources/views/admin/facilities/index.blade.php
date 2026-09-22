@@ -67,14 +67,12 @@
                 @endif
 
                 <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between gap-2">
-                    <form method="POST" action="{{ route('admin.facilities.update-status', $facility) }}">
+                    <form method="POST" action="{{ route('admin.facilities.update-status', $facility) }}" class="w-36">
                         @csrf
                         @method('PATCH')
-                        <select name="status" onchange="this.form.submit()" class="text-xs rounded-lg border-slate-200 focus:border-emerald-500 focus:ring-emerald-500">
-                            <option value="aktif" @selected($facility->status === 'aktif')>Aktif</option>
-                            <option value="nonaktif" @selected($facility->status === 'nonaktif')>Nonaktif</option>
-                            <option value="dalam_perbaikan" @selected($facility->status === 'dalam_perbaikan')>Dalam Perbaikan</option>
-                        </select>
+                        <x-select-dropdown name="status" :nullable="false" :autosubmit="true"
+                            :options="['aktif' => 'Aktif', 'nonaktif' => 'Nonaktif', 'dalam_perbaikan' => 'Dalam Perbaikan']"
+                            :selected="$facility->status" />
                     </form>
 
                     <div class="flex items-center gap-3 text-sm">

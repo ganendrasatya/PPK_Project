@@ -39,23 +39,13 @@
     <form method="GET" class="mb-6 flex flex-wrap gap-3 items-end bg-white rounded-2xl ring-1 ring-slate-900/5 p-4">
         <div>
             <label class="block text-xs font-medium text-slate-500 mb-1">Role</label>
-            <select name="role" class="rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 text-sm">
-                <option value="">Semua</option>
-                @foreach (['admin', 'petugas', 'pengguna'] as $role)
-                    <option value="{{ $role }}" @selected(request('role') === $role)>{{ ucfirst($role) }}</option>
-                @endforeach
-            </select>
+            <x-select-dropdown name="role" :options="['admin' => 'Admin', 'petugas' => 'Petugas', 'pengguna' => 'Pengguna']" :selected="request('role')" />
         </div>
         <div>
             <label class="block text-xs font-medium text-slate-500 mb-1">Status</label>
-            <select name="status" class="rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 text-sm">
-                <option value="">Semua</option>
-                @foreach (['pending', 'verified', 'rejected'] as $status)
-                    <option value="{{ $status }}" @selected(request('status') === $status)>{{ ucfirst($status) }}</option>
-                @endforeach
-            </select>
+            <x-select-dropdown name="status" :options="['pending' => 'Pending', 'verified' => 'Verified', 'rejected' => 'Rejected']" :selected="request('status')" />
         </div>
-        <button type="submit" class="px-4 py-2 bg-slate-800 rounded-lg text-sm font-medium text-white hover:bg-slate-700 transition">Filter</button>
+        <button type="submit" class="px-4 py-2.5 bg-slate-800 rounded-lg text-sm font-medium text-white hover:bg-slate-700 transition">Filter</button>
     </form>
 
     <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 divide-y divide-slate-100 overflow-hidden">

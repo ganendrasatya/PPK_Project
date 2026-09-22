@@ -34,11 +34,11 @@
 
     <div>
         <x-input-label for="status" value="Status" />
-        <select id="status" name="status" required class="{{ $inputClass }}">
-            @foreach (['aktif' => 'Aktif', 'nonaktif' => 'Nonaktif', 'dalam_perbaikan' => 'Dalam Perbaikan'] as $value => $label)
-                <option value="{{ $value }}" @selected(old('status', $facility?->status ?? 'aktif') === $value)>{{ $label }}</option>
-            @endforeach
-        </select>
+        <div class="mt-1">
+            <x-select-dropdown name="status" :nullable="false"
+                :options="['aktif' => 'Aktif', 'nonaktif' => 'Nonaktif', 'dalam_perbaikan' => 'Dalam Perbaikan']"
+                :selected="old('status', $facility?->status ?? 'aktif')" />
+        </div>
         <x-input-error :messages="$errors->get('status')" class="mt-2" />
     </div>
 </div>
