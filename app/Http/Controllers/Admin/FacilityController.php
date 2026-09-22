@@ -12,11 +12,23 @@ use Illuminate\View\View;
 
 class FacilityController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        $facilities = Facility::latest()->paginate(15);
+        $facilities = Facility::query()
+            ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')))
+            ->latest()
+            ->paginate(9)
+            ->withQueryString();
 
-        return view('admin.facilities.index', ['facilities' => $facilities]);
+        return view('admin.facilities.index', [
+            'facilities' => $facilities,
+            'statusCounts' => [
+                'semua' => Facility::count(),
+                'aktif' => Facility::where('status', 'aktif')->count(),
+                'nonaktif' => Facility::where('status', 'nonaktif')->count(),
+                'dalam_perbaikan' => Facility::where('status', 'dalam_perbaikan')->count(),
+            ],
+        ]);
     }
 
     public function create(): View
