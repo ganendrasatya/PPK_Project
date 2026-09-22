@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\RecapController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CatalogController;
+use App\Http\Controllers\PetugasController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\DamageReportController;
 use Illuminate\Support\Facades\Route;
@@ -35,6 +36,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/reports', [DamageReportController::class, 'index'])->name('reports.index');
     Route::post('/reports', [DamageReportController::class, 'store'])->name('reports.store');
     Route::patch('/reports/{report}/status', [DamageReportController::class, 'updateStatus'])->name('reports.update-status');
+
+    // Petugas: kelola & setujui/tolak reservasi
+    Route::middleware('role:admin,petugas')->group(function () {
+        Route::get('/petugas', [PetugasController::class, 'dashboard'])->name('petugas.dashboard');
+        Route::post('/reservations/{reservation}/approve', [ReservationController::class, 'approve'])->name('reservations.approve');
+        Route::post('/reservations/{reservation}/reject', [ReservationController::class, 'reject'])->name('reservations.reject');
+    });
 });
 
 // Admin Routes

@@ -32,7 +32,7 @@
                         <a href="{{ route('reservations.index') }}" class="{{ request()->routeIs('reservations.*') ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-teal-700' }} rounded-full px-4 py-2 text-sm font-semibold transition-all">Reservasi Saya</a>
                         
                         @if(auth()->user()->role === 'admin' || auth()->user()->role === 'petugas')
-                            <a href="{{ route('admin.dashboard') ?? '#' }}" class="{{ request()->routeIs('admin.*') ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-teal-700' }} rounded-full px-4 py-2 text-sm font-semibold transition-all">Dashboard Petugas</a>
+                            <a href="{{ route('petugas.dashboard') }}" class="{{ request()->routeIs('petugas.*') ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-teal-700' }} rounded-full px-4 py-2 text-sm font-semibold transition-all">Dashboard Petugas</a>
                         @endif
                         
                         <a href="{{ route('reports.index') }}" class="{{ request()->routeIs('reports.*') ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-teal-700' }} rounded-full px-4 py-2 text-sm font-semibold transition-all">Laporan & Kerusakan</a>
@@ -81,7 +81,7 @@
                 @auth
                     <a href="{{ route('reservations.index') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('reservations.*') ? 'bg-teal-50 text-teal-700' : 'text-gray-700 hover:bg-gray-50' }}">Reservasi Saya</a>
                     @if(auth()->user()->role === 'admin' || auth()->user()->role === 'petugas')
-                        <a href="{{ route('admin.dashboard') ?? '#' }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('admin.*') ? 'bg-teal-50 text-teal-700' : 'text-gray-700 hover:bg-gray-50' }}">Dashboard Petugas</a>
+                        <a href="{{ route('petugas.dashboard') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('petugas.*') ? 'bg-teal-50 text-teal-700' : 'text-gray-700 hover:bg-gray-50' }}">Dashboard Petugas</a>
                     @endif
                     <a href="{{ route('reports.index') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('reports.*') ? 'bg-teal-50 text-teal-700' : 'text-gray-700 hover:bg-gray-50' }}">Laporan & Kerusakan</a>
                 @endauth
@@ -148,16 +148,16 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-white border-t border-gray-200 py-8 mt-auto z-10">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="flex items-center gap-2 opacity-80">
-                <svg class="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                <span class="text-sm text-gray-600 font-semibold">
+    <footer class="bg-white border-t border-gray-200 py-3 mt-auto z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-2">
+            <div class="flex items-center gap-1.5 opacity-80">
+                <svg class="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                <span class="text-xs text-gray-500 font-medium">
                     © {{ date('Y') }} ReservasiFasilitas Kampus & Perkantoran. Seluruh hak cipta dilindungi.
                 </span>
             </div>
-            <div class="flex items-center gap-2 text-sm text-gray-700 font-semibold bg-gray-50 px-4 py-2 rounded-full border border-gray-100">
-                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-sm shadow-emerald-200"></span>
+            <div class="flex items-center gap-1.5 text-xs text-gray-600 font-medium bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-sm shadow-emerald-200"></span>
                 Jam Operasional: 07.00 – 18.00 WIB
             </div>
         </div>

@@ -140,6 +140,10 @@
                         </div>
                         
                         <p class="text-sm text-gray-500 mt-2 bg-gray-50 p-2 rounded border border-gray-100"><span class="font-medium text-gray-700">Keperluan:</span> {{ $reservation->purpose }}</p>
+
+                        @if ($reservation->status === 'rejected' && $reservation->cancel_reason)
+                            <p class="text-sm text-red-700 mt-2 bg-red-50 p-2 rounded border border-red-100"><span class="font-semibold">Alasan ditolak:</span> {{ $reservation->cancel_reason }}</p>
+                        @endif
                     </div>
 
                     <!-- Action -->

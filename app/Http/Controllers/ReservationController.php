@@ -105,4 +105,44 @@ class ReservationController extends Controller
 
         return back()->with('success', 'Reservasi berhasil dibatalkan.');
     }
+
+    public function approve(Reservation $reservation)
+    {
+        if ($reservation->status !== 'pending') {
+            return back()->with('error', 'Reservasi ini sudah diproses sebelumnya.');
+        }
+
+        $conflict = Reservation::where('facility_id', $reservation->facility_id)
+            ->where('id', '!=', $reservation->id)
+            ->where('status', 'approved')
+            ->where('start_time', '<', $reservation->end_time)
+            ->where('end_time', '>', $reservation->start_time)
+            ->exists();
+
+        if ($conflict) {
+            return back()->with('error', 'Tidak dapat menyetujui: jadwal bentrok dengan reservasi lain yang sudah disetujui.');
+        }
+
+        $reservation->update(['status' => 'approved']);
+
+        return back()->with('success', "Reservasi #{$reservation->id} berhasil disetujui.");
+    }
+
+    public function reject(Request $request, Reservation $reservation)
+    {
+        if ($reservation->status !== 'pending') {
+            return back()->with('error', 'Reservasi ini sudah diproses sebelumnya.');
+        }
+
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'max:255'],
+        ]);
+
+        $reservation->update([
+            'status' => 'rejected',
+            'cancel_reason' => $validated['reason'],
+        ]);
+
+        return back()->with('success', "Reservasi #{$reservation->id} ditolak.");
+    }
 }
