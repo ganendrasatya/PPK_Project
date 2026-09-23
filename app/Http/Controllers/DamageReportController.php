@@ -72,6 +72,7 @@ class DamageReportController extends Controller
             'facility_id' => $validated['facility_id'],
             'title' => $validated['title'],
             'category' => $validated['category'],
+            'urgency' => $validated['urgency'],
             'description' => $validated['description'],
             'photo_path' => $photoPath,
             'status' => 'baru',
@@ -89,10 +90,12 @@ class DamageReportController extends Controller
 
         $validated = $request->validate([
             'status' => 'required|in:baru,diproses,selesai,ditolak',
+            'resolution_note' => ['required_if:status,ditolak', 'nullable', 'string', 'max:255'],
         ]);
 
         $report->update([
             'status' => $validated['status'],
+            'resolution_note' => $validated['resolution_note'] ?? $report->resolution_note,
         ]);
 
         return back()->with('success', 'Status penanganan laporan berhasil diperbarui menjadi ' . ucfirst($validated['status']) . '.');

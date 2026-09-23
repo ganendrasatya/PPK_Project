@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreDamageReportRequest extends FormRequest
 {
@@ -15,10 +16,11 @@ class StoreDamageReportRequest extends FormRequest
     {
         return [
             'facility_id' => ['required', 'exists:facilities,id'],
-            'category' => ['required', 'string', 'in:Kerusakan Ringan,Kerusakan Sedang,Kerusakan Berat'],
+            'category' => ['required', 'string', Rule::in(['Kelistrikan & Lampu', 'AC & Ventilasi', 'IT, PC & Kabel LAN', 'Mebel & Fisik Pintu'])],
+            'urgency' => ['required', 'string', 'in:rendah,sedang,mendesak'],
             'title' => ['required', 'string', 'max:255'],
-            'description' => ['required', 'string', 'min:10'],
-            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:5120'],
+            'description' => ['required', 'string', 'min:10', 'max:500'],
+            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ];
     }
 
@@ -27,16 +29,19 @@ class StoreDamageReportRequest extends FormRequest
         return [
             'facility_id.required' => 'Fasilitas harus dipilih.',
             'facility_id.exists' => 'Fasilitas tidak valid.',
-            'category.required' => 'Kategori kerusakan harus dipilih.',
-            'category.in' => 'Kategori kerusakan tidak valid.',
-            'title.required' => 'Judul laporan harus diisi.',
-            'title.string' => 'Judul laporan harus berupa teks.',
-            'title.max' => 'Judul laporan maksimal 255 karakter.',
+            'category.required' => 'Kategori sarana/prasarana harus dipilih.',
+            'category.in' => 'Kategori sarana/prasarana tidak valid.',
+            'urgency.required' => 'Tingkat urgensi harus dipilih.',
+            'urgency.in' => 'Tingkat urgensi tidak valid.',
+            'title.required' => 'Judul kendala harus diisi.',
+            'title.string' => 'Judul kendala harus berupa teks.',
+            'title.max' => 'Judul kendala maksimal 255 karakter.',
             'description.required' => 'Deskripsi kerusakan harus diisi.',
             'description.string' => 'Deskripsi kerusakan harus berupa teks.',
             'description.min' => 'Deskripsi kerusakan minimal 10 karakter.',
+            'description.max' => 'Deskripsi kerusakan maksimal 500 karakter.',
             'photo.image' => 'Foto harus berupa gambar.',
-            'photo.mimes' => 'Format foto harus berupa JPG, JPEG, atau PNG.',
+            'photo.mimes' => 'Format foto harus berupa JPG, PNG, atau WebP.',
             'photo.max' => 'Ukuran foto maksimal 5MB.',
         ];
     }
