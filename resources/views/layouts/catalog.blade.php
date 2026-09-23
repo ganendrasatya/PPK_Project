@@ -4,6 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+        // Land instantly on the target section (no smooth-scroll flash) when the page loads with a URL hash.
+        if (location.hash) {
+            document.documentElement.classList.remove('scroll-smooth');
+        }
+    </script>
 
     <title>{{ config('app.name', 'ReservasiFasilitas') }}</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">

@@ -248,15 +248,15 @@
 
     <!-- Bottom: Kelola Laporan Kerusakan (Khusus Petugas & Admin) -->
     @if(auth()->user()->isAdmin() || auth()->user()->isPetugas())
-        <div class="max-w-6xl mx-auto px-4 pb-12">
-            <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+        <div id="kelola-laporan" class="max-w-6xl mx-auto px-4 pb-12 scroll-mt-24">
+            <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm flex flex-col" style="min-height: 480px;">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
                     <div>
                         <h2 class="font-bold text-xl text-gray-900">Kelola Laporan Kerusakan</h2>
                         <p class="text-sm text-gray-500 mt-0.5">Verifikasi dan tindak lanjut laporan dari seluruh pengguna.</p>
                     </div>
                     <div>
-                        <a href="{{ route('reports.index', ['manage_status' => $manageStatus]) }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg transition-colors">
+                        <a href="{{ route('reports.index', ['manage_status' => $manageStatus]) }}#kelola-laporan" class="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg transition-colors">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                             Muat ulang
                         </a>
@@ -275,7 +275,7 @@
                         ];
                     @endphp
                     @foreach($tabs as $tabKey => $tabLabel)
-                        <a href="{{ route('reports.index', ['manage_status' => $tabKey]) }}"
+                        <a href="{{ route('reports.index', ['manage_status' => $tabKey]) }}#kelola-laporan"
                            class="px-4 py-1.5 rounded-full text-xs font-semibold transition-colors {{ $manageStatus === $tabKey ? 'bg-teal-700 text-white shadow-sm' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
                             {{ $tabLabel }} <span class="ml-1 opacity-80">{{ $manageCounts[$tabKey] ?? 0 }}</span>
                         </a>
@@ -283,7 +283,7 @@
                 </div>
 
                 <!-- Reports List -->
-                <div class="mt-6 space-y-4">
+                <div class="mt-6 space-y-4 flex-1 flex flex-col">
                     @forelse($manageReports as $mReport)
                         <div class="bg-gray-50/50 rounded-xl border border-gray-200 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                             <div class="flex items-start gap-4">
@@ -371,7 +371,8 @@
                             </form>
                         </x-modal>
                     @empty
-                        <div class="text-center py-8 text-sm text-gray-500">
+                        <div class="flex-1 flex flex-col items-center justify-center text-center text-sm text-gray-500 bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
+                            <svg class="w-8 h-8 text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                             Tidak ada laporan dengan status ini.
                         </div>
                     @endforelse
