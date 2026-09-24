@@ -38,7 +38,7 @@ Route::middleware(['auth', 'account.verified'])->group(function () {
     Route::patch('/reports/{report}/status', [DamageReportController::class, 'updateStatus'])->name('reports.update-status');
 
     // Petugas: kelola & setujui/tolak reservasi
-    Route::middleware('role:admin,petugas')->group(function () {
+    Route::middleware('role:petugas')->group(function () {
         Route::get('/petugas', [PetugasController::class, 'dashboard'])->name('petugas.dashboard');
         Route::post('/reservations/{reservation}/approve', [ReservationController::class, 'approve'])->name('reservations.approve');
         Route::post('/reservations/{reservation}/reject', [ReservationController::class, 'reject'])->name('reservations.reject');

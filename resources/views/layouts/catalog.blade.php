@@ -38,11 +38,15 @@
                     @auth
                         <a href="{{ route('reservations.index') }}" class="{{ request()->routeIs('reservations.*') ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-teal-700' }} rounded-full px-4 py-2 text-sm font-semibold transition-all">Reservasi Saya</a>
                         
-                        @if(auth()->user()->role === 'admin' || auth()->user()->role === 'petugas')
+                        @if(auth()->user()->role === 'petugas')
                             <a href="{{ route('petugas.dashboard') }}" class="{{ request()->routeIs('petugas.*') ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-teal-700' }} rounded-full px-4 py-2 text-sm font-semibold transition-all">Dashboard Petugas</a>
                         @endif
-                        
+
                         <a href="{{ route('reports.index') }}" class="{{ request()->routeIs('reports.*') ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-teal-700' }} rounded-full px-4 py-2 text-sm font-semibold transition-all">Laporan & Kerusakan</a>
+
+                        @if(auth()->user()->role === 'admin')
+                            <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.*') ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-teal-700' }} rounded-full px-4 py-2 text-sm font-semibold transition-all">Admin Panel</a>
+                        @endif
                     @endauth
                 </div>
 
@@ -87,10 +91,13 @@
                 <a href="{{ route('catalog.index') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('catalog.*') ? 'bg-teal-50 text-teal-700' : 'text-gray-700 hover:bg-gray-50' }}">Katalog Fasilitas</a>
                 @auth
                     <a href="{{ route('reservations.index') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('reservations.*') ? 'bg-teal-50 text-teal-700' : 'text-gray-700 hover:bg-gray-50' }}">Reservasi Saya</a>
-                    @if(auth()->user()->role === 'admin' || auth()->user()->role === 'petugas')
+                    @if(auth()->user()->role === 'petugas')
                         <a href="{{ route('petugas.dashboard') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('petugas.*') ? 'bg-teal-50 text-teal-700' : 'text-gray-700 hover:bg-gray-50' }}">Dashboard Petugas</a>
                     @endif
                     <a href="{{ route('reports.index') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('reports.*') ? 'bg-teal-50 text-teal-700' : 'text-gray-700 hover:bg-gray-50' }}">Laporan & Kerusakan</a>
+                    @if(auth()->user()->role === 'admin')
+                        <a href="{{ route('admin.dashboard') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('admin.*') ? 'bg-teal-50 text-teal-700' : 'text-gray-700 hover:bg-gray-50' }}">Admin Panel</a>
+                    @endif
                 @endauth
             </div>
             @auth
