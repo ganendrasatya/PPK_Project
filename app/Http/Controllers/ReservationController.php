@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreReservationRequest;
+use App\Models\Facility;
+use Illuminate\Support\Facades\DB;
 use App\Models\Reservation;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -55,38 +57,37 @@ class ReservationController extends Controller
     public function store(StoreReservationRequest $request)
     {
         $validated = $request->validated();
-        
         $startTime = Carbon::parse($validated['date'] . ' ' . $validated['start_time']);
         $endTime = Carbon::parse($validated['date'] . ' ' . $validated['end_time']);
 
-        // Check for slot conflicts
-        $conflicts = Reservation::where('facility_id', $validated['facility_id'])
-            ->whereIn('status', ['pending', 'approved'])
-            ->where(function ($query) use ($startTime, $endTime) {
-                $query->where(function ($q) use ($startTime, $endTime) {
-                    $q->where('start_time', '<', $endTime)
-                      ->where('end_time', '>', $startTime);
-                });
-            })->exists();
+        $reservation = DB::transaction(function () use ($validated, $startTime, $endTime, $request) {
+            Facility::whereKey($validated['facility_id'])->lockForUpdate()->firstOrFail();
 
-        if ($conflicts) {
+            $conflict = Reservation::where('facility_id', $validated['facility_id'])
+                ->whereIn('status', ['pending', 'approved'])
+                ->where('start_time', '<', $endTime)
+                ->where('end_time', '>', $startTime)
+                ->exists();
+
+            if ($conflict) {
+                return null;
+            }
+
+            return Reservation::create([
+                'user_id' => Auth::id(),
+                'facility_id' => $validated['facility_id'],
+                'purpose' => $validated['purpose'],
+                'proposal_kegiatan_path' => $request->file('proposal_kegiatan')->store('proposals', 'public'),
+                'proposal_permohonan_path' => $request->file('proposal_permohonan')->store('proposals', 'public'),
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+                'status' => 'pending',
+            ]);
+        });
+
+        if (! $reservation) {
             return back()->withInput()->with('error', 'Waktu yang dipilih sudah dibooking atau dalam proses persetujuan.');
         }
-
-        // Store files
-        $proposalKegiatanPath = $request->file('proposal_kegiatan')->store('proposals', 'public');
-        $proposalPermohonanPath = $request->file('proposal_permohonan')->store('proposals', 'public');
-
-        Reservation::create([
-            'user_id' => Auth::id(),
-            'facility_id' => $validated['facility_id'],
-            'purpose' => $validated['purpose'],
-            'proposal_kegiatan_path' => $proposalKegiatanPath,
-            'proposal_permohonan_path' => $proposalPermohonanPath,
-            'start_time' => $startTime,
-            'end_time' => $endTime,
-            'status' => 'pending',
-        ]);
 
         return back()->with('success', 'Reservasi berhasil dibuat. Menunggu persetujuan admin.');
     }
@@ -106,26 +107,40 @@ class ReservationController extends Controller
         return back()->with('success', 'Reservasi berhasil dibatalkan.');
     }
 
-    public function approve(Reservation $reservation)
+        public function approve(Reservation $reservation)
     {
-        if ($reservation->status !== 'pending') {
-            return back()->with('error', 'Reservasi ini sudah diproses sebelumnya.');
-        }
+        $result = DB::transaction(function () use ($reservation) {
+            Facility::whereKey($reservation->facility_id)->lockForUpdate()->firstOrFail();
+            $reservation->refresh();
 
-        $conflict = Reservation::where('facility_id', $reservation->facility_id)
-            ->where('id', '!=', $reservation->id)
-            ->where('status', 'approved')
-            ->where('start_time', '<', $reservation->end_time)
-            ->where('end_time', '>', $reservation->start_time)
-            ->exists();
+            if ($reservation->status !== 'pending') {
+                return 'processed';
+            }
+            if ($reservation->end_time->isPast()) {
+                return 'expired';
+            }
 
-        if ($conflict) {
-            return back()->with('error', 'Tidak dapat menyetujui: jadwal bentrok dengan reservasi lain yang sudah disetujui.');
-        }
+            $conflict = Reservation::where('facility_id', $reservation->facility_id)
+                ->where('id', '!=', $reservation->id)
+                ->where('status', 'approved')
+                ->where('start_time', '<', $reservation->end_time)
+                ->where('end_time', '>', $reservation->start_time)
+                ->exists();
 
-        $reservation->update(['status' => 'approved']);
+            if ($conflict) {
+                return 'conflict';
+            }
 
-        return back()->with('success', "Reservasi #{$reservation->id} berhasil disetujui.");
+            $reservation->update(['status' => 'approved']);
+            return 'ok';
+        });
+
+        return match ($result) {
+            'processed' => back()->with('error', 'Reservasi ini sudah diproses sebelumnya.'),
+            'expired'   => back()->with('error', 'Waktu reservasi sudah lewat dan tidak dapat disetujui.'),
+            'conflict'  => back()->with('error', 'Tidak dapat menyetujui: jadwal bentrok dengan reservasi lain yang sudah disetujui.'),
+            default     => back()->with('success', "Reservasi #{$reservation->id} berhasil disetujui."),
+        };
     }
 
     public function reject(Request $request, Reservation $reservation)

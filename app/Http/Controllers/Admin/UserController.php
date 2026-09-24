@@ -34,6 +34,10 @@ class UserController extends Controller
 
     public function approve(User $user): RedirectResponse
     {
+        if ($user->isAdmin() || $user->is(auth()->user())) {
+            return back()->with('error', 'Akun admin tidak dapat diubah statusnya.');
+        }
+
         $user->update(['status' => 'verified']);
 
         return back()->with('status', "Akun {$user->name} berhasil diverifikasi.");
@@ -41,6 +45,10 @@ class UserController extends Controller
 
     public function reject(User $user): RedirectResponse
     {
+        if ($user->isAdmin() || $user->is(auth()->user())) {
+            return back()->with('error', 'Akun admin tidak dapat diubah statusnya.');
+        }
+
         $user->update(['status' => 'rejected']);
 
         return back()->with('status', "Akun {$user->name} ditolak.");

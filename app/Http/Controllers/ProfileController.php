@@ -48,6 +48,14 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
+        if ($user->isAdmin()) {
+            return back()->with('error', 'Akun admin tidak dapat dihapus dari halaman profil.');
+        }
+        
+        if ($user->reservations()->exists() || $user->reports()->exists()) { 
+            return back()->with('error', 'Akun punya riwayat reservasi atau laporan dan tidak dapat dihapus.');
+        }
+
         Auth::logout();
 
         $user->delete();

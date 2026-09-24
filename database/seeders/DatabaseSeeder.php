@@ -86,7 +86,7 @@ class DatabaseSeeder extends Seeder
 
         Facility::create([
             'nama_fasilitas' => 'Lapangan Basket',
-            'tipe' => 'Lapangan',
+            'tipe' => 'Olahraga',
             'lokasi' => 'Area Olahraga',
             'kapasitas' => 20,
             'deskripsi' => 'Lapangan basket outdoor standar.',
@@ -169,14 +169,15 @@ class DatabaseSeeder extends Seeder
             'status' => 'pending',
         ]);
 
-        // Sample Report
         Report::create([
             'user_id' => $testUser->id,
             'facility_id' => $labKom->id,
             'title' => 'AC Rusak',
-            'category' => 'Kerusakan Sedang',
+            'category' => 'AC & Ventilasi',
+            'urgency' => 'sedang',
             'description' => 'AC di pojok ruangan tidak dingin sama sekali.',
             'status' => 'baru',
         ]);
+ 
     }
 }

@@ -15,7 +15,7 @@ class StoreDamageReportRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'facility_id' => ['required', 'exists:facilities,id'],
+            'facility_id' => ['required', Rule::exists('facilities', 'id')->where('status', 'aktif')],
             'category' => ['required', 'string', Rule::in(['Kelistrikan & Lampu', 'AC & Ventilasi', 'IT, PC & Kabel LAN', 'Mebel & Fisik Pintu'])],
             'urgency' => ['required', 'string', 'in:rendah,sedang,mendesak'],
             'title' => ['required', 'string', 'max:255'],
@@ -28,7 +28,7 @@ class StoreDamageReportRequest extends FormRequest
     {
         return [
             'facility_id.required' => 'Fasilitas harus dipilih.',
-            'facility_id.exists' => 'Fasilitas tidak valid.',
+            'facility_id.exists' => 'Fasilitas tidak valid atau sedang tidak aktif.',
             'category.required' => 'Kategori sarana/prasarana harus dipilih.',
             'category.in' => 'Kategori sarana/prasarana tidak valid.',
             'urgency.required' => 'Tingkat urgensi harus dipilih.',
@@ -41,6 +41,7 @@ class StoreDamageReportRequest extends FormRequest
             'description.min' => 'Deskripsi kerusakan minimal 10 karakter.',
             'description.max' => 'Deskripsi kerusakan maksimal 500 karakter.',
             'photo.image' => 'Foto harus berupa gambar.',
+            'photo.uploaded' => 'Foto gagal diunggah. Periksa ukuran file.', // <-- Pesan baru ditambahkan di sini
             'photo.mimes' => 'Format foto harus berupa JPG, PNG, atau WebP.',
             'photo.max' => 'Ukuran foto maksimal 5MB.',
         ];

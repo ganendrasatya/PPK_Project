@@ -11,16 +11,16 @@ use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\DamageReportController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [CatalogController::class, 'index'])->middleware(['auth'])->name('catalog.index');
+Route::get('/', [CatalogController::class, 'index'])->middleware(['auth', 'account.verified'])->name('catalog.index');
 
 Route::get('/dashboard', function () {
-    if (auth()->user()->isAdmin()) {
-        return redirect()->route('admin.dashboard');
-    }
+    $user = auth()->user();
+    if ($user->isAdmin()) return redirect()->route('admin.dashboard');
+    if ($user->isPetugas()) return redirect()->route('petugas.dashboard');
     return redirect()->route('catalog.index');
-})->middleware(['auth'])->name('dashboard');
+})->middleware(['auth', 'account.verified'])->name('dashboard');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'account.verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -46,7 +46,7 @@ Route::middleware('auth')->group(function () {
 });
 
 // Admin Routes
-Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'account.verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
 
     // User Management

@@ -9,6 +9,7 @@ use App\Models\Facility;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Storage;
 
 class FacilityController extends Controller
 {
@@ -38,25 +39,44 @@ class FacilityController extends Controller
 
     public function store(StoreFacilityRequest $request): RedirectResponse
     {
-        Facility::create($request->validated());
+        $data = $request->safe()->except('image');
+
+        if ($request->hasFile('image')) {
+            $data['image_path'] = $request->file('image')->store('facilities', 'public');
+        }
+
+        Facility::create($data);
 
         return redirect()->route('admin.facilities.index')->with('status', 'Fasilitas berhasil ditambahkan.');
     }
 
-    public function edit(Facility $facility): View
-    {
-        return view('admin.facilities.edit', ['facility' => $facility]);
-    }
-
     public function update(UpdateFacilityRequest $request, Facility $facility): RedirectResponse
     {
-        $facility->update($request->validated());
+        $data = $request->safe()->except('image');
+
+        if ($request->hasFile('image')) {
+            $newPath = $request->file('image')->store('facilities', 'public');
+            if ($facility->image_path) {
+                Storage::disk('public')->delete($facility->image_path);
+            }
+            $data['image_path'] = $newPath;
+        }
+
+        $facility->update($data);
 
         return redirect()->route('admin.facilities.index')->with('status', 'Fasilitas berhasil diperbarui.');
     }
 
     public function destroy(Facility $facility): RedirectResponse
     {
+        if ($facility->reservations()->exists() || $facility->reports()->exists()) {
+            return back()->with('error', 'Fasilitas punya riwayat reservasi atau laporan dan tidak dapat dihapus. Nonaktifkan saja.');
+        }
+
+        if ($facility->image_path) {
+            Storage::disk('public')->delete($facility->image_path);
+        }
+
         $facility->delete();
 
         return redirect()->route('admin.facilities.index')->with('status', 'Fasilitas berhasil dihapus.');

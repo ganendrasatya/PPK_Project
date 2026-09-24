@@ -22,13 +22,18 @@ class StoreFacilityRequest extends FormRequest
      */
     public function rules(): array
     {
+
         return [
             'nama_fasilitas' => ['required', 'string', 'max:255'],
             'tipe' => ['required', 'string', 'max:255'],
             'lokasi' => ['required', 'string', 'max:255'],
-            'kapasitas' => ['required', 'integer', 'min:1'],
-            'deskripsi' => ['nullable', 'string'],
+            'kapasitas' => ['required', 'integer', 'min:1', 'max:10000'],
+            'deskripsi' => ['nullable', 'string', 'max:2000'],
             'status' => ['required', 'in:aktif,nonaktif,dalam_perbaikan'],
+            'jam_buka' => ['required', 'date_format:H:i'],
+            'jam_tutup' => ['required', 'date_format:H:i', 'after:jam_buka'],
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ];
+
     }
 }
