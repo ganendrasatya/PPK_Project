@@ -152,7 +152,8 @@ class UserPortalTest extends TestCase
 
         $response = $this->actingAs($this->user)->post('/reports', [
             'facility_id' => $this->facility->id,
-            'category' => 'Kerusakan Sedang',
+            'category' => 'Mebel & Fisik Pintu',
+            'urgency' => 'sedang',
             'title' => 'Ring Basket Rusak',
             'description' => 'Ring basket bengkok dan jaringnya terlepas',
             'photo' => $photo,
@@ -163,7 +164,8 @@ class UserPortalTest extends TestCase
             'user_id' => $this->user->id,
             'facility_id' => $this->facility->id,
             'title' => 'Ring Basket Rusak',
-            'category' => 'Kerusakan Sedang',
+            'category' => 'Mebel & Fisik Pintu',
+            'urgency' => 'sedang',
             'status' => 'baru',
         ]);
     }
