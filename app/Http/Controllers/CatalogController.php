@@ -13,6 +13,7 @@ class CatalogController extends Controller
     {
         $search = $request->input('search');
         $selectedType = $request->input('type');
+        $minCapacity = $request->input('min_capacity');
         $date = $request->input('date', Carbon::today()->format('Y-m-d'));
 
         $query = Facility::where('status', 'aktif');
@@ -29,6 +30,10 @@ class CatalogController extends Controller
             $query->where('tipe', $selectedType);
         }
 
+        if ($minCapacity) {
+            $query->where('kapasitas', '>=', (int) $minCapacity);
+        }
+
         $facilities = $query->paginate(12);
         
         $types = Facility::select('tipe')->distinct()->pluck('tipe');
@@ -41,7 +46,7 @@ class CatalogController extends Controller
             $facility->total_slots_count = count($slots);
         }
 
-        return view('catalog.index', compact('facilities', 'types', 'selectedType', 'search', 'date'));
+        return view('catalog.index', compact('facilities', 'types', 'selectedType', 'minCapacity', 'search', 'date'));
     }
 
     public function show(Facility $facility, Request $request)
@@ -106,11 +111,9 @@ class CatalogController extends Controller
                 }
             }
             
-            // If the date is today, make past slots unavailable
-            if (Carbon::parse($date)->isToday()) {
-                if ($slotStartDatetime < Carbon::now()) {
-                    $available = false;
-                }
+            // If the slot is in the past, make it unavailable
+            if ($slotStartDatetime < Carbon::now()) {
+                $available = false;
             }
 
             $slots[] = [

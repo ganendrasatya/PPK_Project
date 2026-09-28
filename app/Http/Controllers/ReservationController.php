@@ -102,6 +102,10 @@ class ReservationController extends Controller
             return back()->with('error', 'Hanya reservasi dengan status pending yang dapat dibatalkan.');
         }
 
+        if ($reservation->start_time->isPast()) {
+            return back()->with('error', 'Batas waktu pembatalan telah lewat. Reservasi yang sudah dimulai/lewat tidak dapat dibatalkan.');
+        }
+
         $reservation->update(['status' => 'cancelled']);
 
         return back()->with('success', 'Reservasi berhasil dibatalkan.');

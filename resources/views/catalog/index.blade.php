@@ -49,24 +49,28 @@
                     </div>
                     <!-- Date -->
                     <div>
-                        <input type="date" name="date" value="{{ $date }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 text-sm" onchange="document.getElementById('filter-form').submit()">
+                        <input type="date" name="date" value="{{ $date }}" min="{{ date('Y-m-d') }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 text-sm" onchange="document.getElementById('filter-form').submit()">
                     </div>
-                    <!-- Session (Decorative) -->
+                    <!-- Kapasitas Filter (User Story #2) -->
                     <div>
-                        <select disabled class="w-full px-3 py-2 border border-gray-200 bg-gray-50 text-gray-500 rounded-lg text-sm cursor-not-allowed">
-                            <option>Semua Sesi Jam Operasional</option>
+                        <select name="min_capacity" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 text-sm text-gray-700 font-medium" onchange="document.getElementById('filter-form').submit()">
+                            <option value="">Semua Kapasitas</option>
+                            <option value="20" {{ ($minCapacity ?? '') == '20' ? 'selected' : '' }}>Minimal 20 orang</option>
+                            <option value="40" {{ ($minCapacity ?? '') == '40' ? 'selected' : '' }}>Minimal 40 orang</option>
+                            <option value="100" {{ ($minCapacity ?? '') == '100' ? 'selected' : '' }}>Minimal 100 orang</option>
+                            <option value="250" {{ ($minCapacity ?? '') == '250' ? 'selected' : '' }}>Minimal 250+ orang (Aula/Auditorium)</option>
                         </select>
                     </div>
                 </div>
                 
                 <div class="flex flex-col md:flex-row md:items-center justify-between mt-4 gap-4">
                     <div class="flex flex-wrap gap-2">
-                        <a href="{{ route('catalog.index', ['search' => $search, 'date' => $date]) }}" 
+                        <a href="{{ route('catalog.index', array_filter(['search' => $search, 'date' => $date, 'min_capacity' => $minCapacity ?? null])) }}" 
                            class="{{ empty($selectedType) ? 'bg-teal-700 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }} rounded-full px-4 py-1.5 text-sm font-medium transition-colors">
                             Semua
                         </a>
                         @foreach($types as $type)
-                            <a href="{{ route('catalog.index', ['type' => $type, 'search' => $search, 'date' => $date]) }}" 
+                            <a href="{{ route('catalog.index', array_filter(['type' => $type, 'search' => $search, 'date' => $date, 'min_capacity' => $minCapacity ?? null])) }}" 
                                class="{{ $selectedType === $type ? 'bg-teal-700 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }} rounded-full px-4 py-1.5 text-sm font-medium transition-colors">
                                 {{ $type }}
                             </a>
