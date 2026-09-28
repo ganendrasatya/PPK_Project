@@ -57,8 +57,29 @@
         <div class="w-full lg:w-7/12" x-data="slotGrid()">
             <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-                    <h2 class="text-xl font-bold text-gray-900">Ketersediaan Slot</h2>
-                    <input type="date" x-model="selectedDate" @change="fetchSlots()" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-teal-500 focus:border-teal-500 shadow-sm">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900">Ketersediaan Slot</h2>
+                        <p class="text-xs text-gray-500 mt-0.5">Pilih tanggal dan slot waktu operasional (07:00 – 18:00 WIB)</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="text-xs text-gray-500 font-medium">Tanggal:</label>
+                        <input type="date" x-model="selectedDate" @change="fetchSlots()" min="{{ date('Y-m-d') }}" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-teal-500 focus:border-teal-500 shadow-sm font-medium text-gray-700">
+                    </div>
+                </div>
+
+                <!-- Warning Notice for Past Date / Time -->
+                <div x-show="pastDateWarning" x-transition.duration.300ms style="display: none;" class="mb-5 bg-amber-50 border border-amber-300 text-amber-900 px-4 py-3 rounded-xl flex items-start gap-3 text-sm shadow-sm">
+                    <i class="ph ph-warning-circle text-amber-600 text-2xl shrink-0 mt-0.5"></i>
+                    <div>
+                        <p class="font-semibold text-amber-900">Peringatan: Tidak dapat memilih waktu di masa lampau!</p>
+                        <p class="text-xs text-amber-800 mt-0.5">Sistem telah mengembalikan pilihan ke tanggal hari ini secara otomatis. Reservasi hanya dapat diajukan untuk hari ini atau hari mendatang.</p>
+                    </div>
+                </div>
+
+                <!-- Toast Notice for Clicking Unavailable Slot -->
+                <div x-show="unavailableNotice" x-transition.duration.200ms style="display: none;" class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-2.5 rounded-xl flex items-center gap-2 text-xs font-medium">
+                    <i class="ph ph-prohibit text-red-500 text-base"></i>
+                    <span x-text="unavailableNotice"></span>
                 </div>
 
                 <!-- Loader -->
@@ -81,12 +102,11 @@
                         <template x-for="slot in slots" :key="slot.time">
                             <button 
                                 type="button"
-                                :disabled="!slot.available"
-                                @click="if(slot.available) selectSlot(slot.time)"
+                                @click="handleSlotClick(slot)"
                                 :class="{
                                     'border-emerald-400 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 cursor-pointer': slot.available && selectedSlot !== slot.time,
                                     'border-teal-600 bg-teal-600 text-white shadow-md': slot.available && selectedSlot === slot.time,
-                                    'border-red-300 bg-red-50 text-red-400 cursor-not-allowed opacity-70': !slot.available
+                                    'border-red-200 bg-red-50/70 text-red-400 cursor-not-allowed opacity-60 line-through': !slot.available
                                 }"
                                 class="border-2 rounded-xl px-2 py-2.5 text-center text-sm font-medium transition-all"
                                 x-text="slot.time">
@@ -97,7 +117,7 @@
                     <div class="flex flex-wrap gap-6 mt-6 pt-6 border-t border-gray-100 text-sm text-gray-600 font-medium justify-center">
                         <span class="flex items-center gap-2"><span class="w-4 h-4 border-2 border-emerald-400 bg-emerald-50 rounded"></span> Tersedia</span>
                         <span class="flex items-center gap-2"><span class="w-4 h-4 border-2 border-teal-600 bg-teal-600 rounded"></span> Dipilih</span>
-                        <span class="flex items-center gap-2"><span class="w-4 h-4 border-2 border-red-300 bg-red-50 rounded"></span> Penuh</span>
+                        <span class="flex items-center gap-2"><span class="w-4 h-4 border-2 border-red-200 bg-red-50 rounded line-through"></span> Penuh / Lewat</span>
                     </div>
 
                     <button 
@@ -141,21 +161,20 @@
                                 <div class="grid grid-cols-2 gap-4 mb-4">
                                     <div>
                                         <label class="block font-semibold text-sm text-gray-700 mb-1">Jam Mulai</label>
-                                        <select name="start_time" x-model="formStartTime" class="w-full border border-gray-300 rounded-lg px-3 py-2 shadow-sm focus:ring-teal-500 focus:border-teal-500">
-                                            <option value="">Pilih...</option>
-                                            <template x-for="slot in slots" :key="'start-'+slot.time">
-                                                <option x-show="slot.available" :value="slot.time" x-text="slot.time"></option>
+                                        <select name="start_time" x-model="formStartTime" @change="updateEndTime()" required class="w-full border border-gray-300 rounded-lg px-3 py-2 shadow-sm focus:ring-teal-500 focus:border-teal-500 text-sm">
+                                            <option value="">Pilih Jam Mulai...</option>
+                                            <template x-for="slot in availableStartSlots()" :key="'start-'+slot.time">
+                                                <option :value="slot.time" x-text="slot.time + ' WIB'"></option>
                                             </template>
                                         </select>
                                         @error('start_time') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                                     </div>
                                     <div>
                                         <label class="block font-semibold text-sm text-gray-700 mb-1">Jam Selesai</label>
-                                        <select name="end_time" class="w-full border border-gray-300 rounded-lg px-3 py-2 shadow-sm focus:ring-teal-500 focus:border-teal-500">
-                                            <option value="">Pilih...</option>
-                                            <!-- Simple assumption: user chooses any available slot as end time. In production, logic filters end times > start time -->
-                                            <template x-for="slot in slots" :key="'end-'+slot.end_time">
-                                                <option x-show="slot.available || true" :value="slot.end_time" x-text="slot.end_time"></option>
+                                        <select name="end_time" x-model="formEndTime" required class="w-full border border-gray-300 rounded-lg px-3 py-2 shadow-sm focus:ring-teal-500 focus:border-teal-500 text-sm">
+                                            <option value="">Pilih Jam Selesai...</option>
+                                            <template x-for="slot in availableEndSlots()" :key="'end-'+slot.end_time">
+                                                <option :value="slot.end_time" x-text="slot.end_time + ' WIB'"></option>
                                             </template>
                                         </select>
                                         @error('end_time') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
@@ -164,7 +183,7 @@
 
                                 <div class="mb-4">
                                     <label class="block font-semibold text-sm text-gray-700 mb-1">Keperluan</label>
-                                    <textarea name="purpose" rows="3" required class="w-full border border-gray-300 rounded-lg px-3 py-2 shadow-sm focus:ring-teal-500 focus:border-teal-500" placeholder="Contoh: Latihan basket tim fakultas">{{ old('purpose') }}</textarea>
+                                    <textarea name="purpose" rows="3" required class="w-full border border-gray-300 rounded-lg px-3 py-2 shadow-sm focus:ring-teal-500 focus:border-teal-500 text-sm" placeholder="Contoh: Latihan basket tim fakultas">{{ old('purpose') }}</textarea>
                                     @error('purpose') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                                 </div>
 
@@ -199,11 +218,15 @@
         document.addEventListener('alpine:init', () => {
             Alpine.data('slotGrid', () => ({
                 selectedDate: '{{ $date }}',
+                todayDate: '{{ date('Y-m-d') }}',
                 slots: @json($slots ?? []),
                 showModal: {{ $errors->any() ? 'true' : 'false' }},
                 selectedSlot: null,
                 formStartTime: '{{ old('start_time') }}',
+                formEndTime: '{{ old('end_time') }}',
                 loading: false,
+                pastDateWarning: false,
+                unavailableNotice: null,
 
                 init() {
                     if(this.slots.length === 0) {
@@ -211,10 +234,20 @@
                     }
                     if({{ $errors->any() ? 'true' : 'false' }} && '{{ old('start_time') }}') {
                         this.selectedSlot = '{{ old('start_time') }}';
+                        this.formStartTime = '{{ old('start_time') }}';
+                        this.formEndTime = '{{ old('end_time') }}';
                     }
                 },
 
                 async fetchSlots() {
+                    if (this.selectedDate < this.todayDate) {
+                        this.pastDateWarning = true;
+                        this.selectedDate = this.todayDate;
+                        setTimeout(() => { this.pastDateWarning = false; }, 5000);
+                    } else {
+                        this.pastDateWarning = false;
+                    }
+
                     this.loading = true;
                     this.selectedSlot = null;
                     try {
@@ -229,9 +262,43 @@
                     }
                 },
 
+                handleSlotClick(slot) {
+                    if(slot.available) {
+                        this.selectSlot(slot.time);
+                        this.unavailableNotice = null;
+                    } else {
+                        this.unavailableNotice = `Slot pukul ${slot.time} WIB tidak dapat dipilih karena waktu telah lewat atau sudah dipesan.`;
+                        setTimeout(() => { this.unavailableNotice = null; }, 4000);
+                    }
+                },
+
                 selectSlot(time) {
                     this.selectedSlot = time;
                     this.formStartTime = time;
+                    const found = this.slots.find(s => s.time === time);
+                    if (found) {
+                        this.formEndTime = found.end_time;
+                    }
+                },
+
+                availableStartSlots() {
+                    return this.slots.filter(s => s.available);
+                },
+
+                availableEndSlots() {
+                    if (!this.formStartTime) {
+                        return this.slots;
+                    }
+                    return this.slots.filter(s => s.end_time > this.formStartTime);
+                },
+
+                updateEndTime() {
+                    if (this.formStartTime) {
+                        const found = this.slots.find(s => s.time === this.formStartTime);
+                        if (found && (!this.formEndTime || this.formEndTime <= this.formStartTime)) {
+                            this.formEndTime = found.end_time;
+                        }
+                    }
                 },
 
                 openModal() {

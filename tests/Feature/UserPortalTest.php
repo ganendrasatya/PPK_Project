@@ -208,5 +208,37 @@ class UserPortalTest extends TestCase
             'status' => 'diproses',
         ]);
     }
+
+    public function test_user_can_filter_facilities_by_capacity(): void
+    {
+        $response = $this->actingAs($this->user)->get('/?min_capacity=30');
+        $response->assertStatus(200);
+        $response->assertSee($this->facility->nama_fasilitas);
+
+        $responseEmpty = $this->actingAs($this->user)->get('/?min_capacity=999');
+        $responseEmpty->assertStatus(200);
+        $responseEmpty->assertDontSee($this->facility->nama_fasilitas);
+    }
+
+    public function test_user_cannot_cancel_past_reservation(): void
+    {
+        $pastReservation = Reservation::create([
+            'user_id' => $this->user->id,
+            'facility_id' => $this->facility->id,
+            'purpose' => 'Rapat kemarin',
+            'proposal_kegiatan_path' => 'proposals/sample1.pdf',
+            'proposal_permohonan_path' => 'proposals/sample2.pdf',
+            'start_time' => Carbon::now()->subHours(2),
+            'end_time' => Carbon::now()->subHours(1),
+            'status' => 'pending',
+        ]);
+
+        $response = $this->actingAs($this->user)->post("/reservations/{$pastReservation->id}/cancel");
+        $response->assertSessionHas('error');
+        $this->assertDatabaseHas('reservations', [
+            'id' => $pastReservation->id,
+            'status' => 'pending',
+        ]);
+    }
 }
 

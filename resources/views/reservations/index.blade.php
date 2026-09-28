@@ -149,13 +149,20 @@
                     <!-- Action -->
                     <div class="md:self-end mt-2 md:mt-0 pt-3 md:pt-0 border-t md:border-0 border-gray-100">
                         @if($reservation->status === 'pending')
-                            <form method="POST" action="{{ route('reservations.cancel', $reservation) }}" class="inline-block">
-                                @csrf
-                                <button type="submit" onclick="return confirm('Yakin ingin membatalkan pengajuan ini?')" class="text-gray-500 hover:text-red-600 text-sm font-medium transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-red-50">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                    Batalkan Pengajuan
-                                </button>
-                            </form>
+                            @if($reservation->start_time->isFuture())
+                                <form method="POST" action="{{ route('reservations.cancel', $reservation) }}" class="inline-block">
+                                    @csrf
+                                    <button type="submit" onclick="return confirm('Yakin ingin membatalkan pengajuan ini?')" class="text-gray-500 hover:text-red-600 text-sm font-medium transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-red-50">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                        Batalkan Pengajuan
+                                    </button>
+                                </form>
+                            @else
+                                <span class="text-xs text-gray-400 italic px-2.5 py-1 bg-gray-50 rounded-lg border border-gray-100 flex items-center gap-1">
+                                    <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    Batas waktu lewat
+                                </span>
+                            @endif
                         @endif
                         @if($reservation->status === 'approved')
                              <a href="#" class="text-teal-600 hover:text-teal-800 text-sm font-medium transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-teal-50">
