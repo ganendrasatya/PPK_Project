@@ -221,6 +221,8 @@
 
                             @if ($report->status === 'ditolak' && $report->resolution_note)
                                 <p class="text-sm text-red-700 mt-2 bg-red-50 p-2.5 rounded-lg border border-red-100"><span class="font-semibold">Alasan ditolak:</span> {{ $report->resolution_note }}</p>
+                            @elseif ($report->status === 'selesai' && $report->resolution_note)
+                                <p class="text-sm text-emerald-800 mt-2 bg-emerald-50 p-2.5 rounded-lg border border-emerald-100"><span class="font-semibold">Catatan resolusi/solusi:</span> {{ $report->resolution_note }}</p>
                             @endif
 
                             <div class="flex items-center gap-2 mt-3 text-xs text-gray-400 font-medium">
@@ -308,6 +310,11 @@
                                         {{ $mReport->facility->nama_fasilitas ?? 'Fasilitas' }} &middot; {{ $mReport->user->name ?? 'Pengguna' }} &middot; {{ $mReport->created_at->format('d M Y, H:i') }}
                                     </div>
                                     <p class="text-xs text-gray-600 mt-1">{{ $mReport->description }}</p>
+                                    @if ($mReport->resolution_note)
+                                        <p class="text-xs {{ $mReport->status === 'ditolak' ? 'text-red-700 bg-red-50 border-red-200' : 'text-emerald-800 bg-emerald-50 border-emerald-200' }} mt-1.5 p-2 rounded-lg border">
+                                            <span class="font-semibold">{{ $mReport->status === 'ditolak' ? 'Alasan penolakan:' : 'Catatan resolusi:' }}</span> {{ $mReport->resolution_note }}
+                                        </p>
+                                    @endif
                                 </div>
                             </div>
 
@@ -324,14 +331,10 @@
                                     </form>
                                 @endif
                                 @if($mReport->status !== 'selesai')
-                                    <form action="{{ route('reports.update-status', $mReport) }}" method="POST">
-                                        @csrf
-                                        @method('PATCH')
-                                        <input type="hidden" name="status" value="selesai">
-                                        <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-1.5 rounded-lg shadow-sm transition-colors">
-                                            Selesai
-                                        </button>
-                                    </form>
+                                    <button type="button" x-data="" @click="$dispatch('open-modal', 'resolve-report-{{ $mReport->id }}')"
+                                        class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-1.5 rounded-lg shadow-sm transition-colors">
+                                        Selesai
+                                    </button>
                                 @endif
                                 @if($mReport->status !== 'ditolak')
                                     <button type="button" x-data="" @click="$dispatch('open-modal', 'reject-report-{{ $mReport->id }}')"
@@ -342,6 +345,37 @@
                             </div>
                         </div>
 
+                        <!-- Modal Selesaikan Laporan -->
+                        <x-modal name="resolve-report-{{ $mReport->id }}" max-width="md">
+                            <form method="POST" action="{{ route('reports.update-status', $mReport) }}" class="p-6">
+                                @csrf
+                                @method('PATCH')
+                                <input type="hidden" name="status" value="selesai">
+                                <h3 class="font-bold text-gray-900 text-lg">Tutup & Selesaikan Laporan</h3>
+                                <p class="text-sm text-gray-500 mt-1">
+                                    Laporan <span class="font-semibold text-gray-700">"{{ $mReport->title }}"</span> akan ditandai selesai.
+                                    Tuliskan catatan resolusi atau tindakan perbaikan yang telah dilakukan.
+                                </p>
+
+                                <div class="mt-4">
+                                    <label class="block font-semibold text-sm text-gray-700 mb-1">Catatan Resolusi / Tindakan Perbaikan <span class="text-emerald-600">*</span></label>
+                                    <textarea name="resolution_note" rows="3" required maxlength="255"
+                                        placeholder="Contoh: Perbaikan fasilitas telah selesai dikerjakan oleh teknisi kampus..."
+                                        class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm shadow-sm focus:ring-emerald-500 focus:border-emerald-500"></textarea>
+                                </div>
+
+                                <div class="mt-6 flex items-center justify-end gap-2">
+                                    <button type="button" @click="show = false" class="text-sm font-semibold text-gray-600 hover:text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+                                        Batal
+                                    </button>
+                                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-sm transition-colors">
+                                        Simpan & Tandai Selesai
+                                    </button>
+                                </div>
+                            </form>
+                        </x-modal>
+
+                        <!-- Modal Tolak Laporan -->
                         <x-modal name="reject-report-{{ $mReport->id }}" max-width="md">
                             <form method="POST" action="{{ route('reports.update-status', $mReport) }}" class="p-6">
                                 @csrf
