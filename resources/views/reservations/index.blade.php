@@ -143,6 +143,8 @@
 
                         @if ($reservation->status === 'rejected' && $reservation->cancel_reason)
                             <p class="text-sm text-red-700 mt-2 bg-red-50 p-2 rounded border border-red-100"><span class="font-semibold">Alasan ditolak:</span> {{ $reservation->cancel_reason }}</p>
+                        @elseif ($reservation->status === 'cancelled' && $reservation->cancel_reason)
+                            <p class="text-sm text-red-700 mt-2 bg-red-50 p-2 rounded border border-red-100"><span class="font-semibold">Alasan dibatalkan:</span> {{ $reservation->cancel_reason }}</p>
                         @endif
                     </div>
 

@@ -164,4 +164,29 @@ class ReservationController extends Controller
 
         return back()->with('success', "Reservasi #{$reservation->id} ditolak.");
     }
+
+    public function cancelByPetugas(Request $request, Reservation $reservation)
+    {
+        if ($reservation->status !== 'approved') {
+            return back()->with('error', 'Hanya reservasi yang sudah disetujui yang dapat dibatalkan.');
+        }
+
+        if ($reservation->end_time->isPast()) {
+            return back()->with('error', 'Reservasi yang sudah lewat waktunya tidak dapat dibatalkan.');
+        }
+
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'max:255'],
+        ], [
+            'reason.required' => 'Alasan pembatalan mendesak wajib diisi.',
+            'reason.max' => 'Alasan pembatalan tidak boleh lebih dari 255 karakter.',
+        ]);
+
+        $reservation->update([
+            'status' => 'cancelled',
+            'cancel_reason' => $validated['reason'],
+        ]);
+
+        return back()->with('success', "Reservasi #{$reservation->id} berhasil dibatalkan oleh petugas.");
+    }
 }

@@ -240,5 +240,101 @@ class UserPortalTest extends TestCase
             'status' => 'pending',
         ]);
     }
+
+    public function test_petugas_can_cancel_approved_reservation_with_reason(): void
+    {
+        $petugas = User::factory()->petugas()->create();
+        $reservation = Reservation::create([
+            'user_id' => $this->user->id,
+            'facility_id' => $this->facility->id,
+            'purpose' => 'Seminar Mahasiswa',
+            'proposal_kegiatan_path' => 'proposals/sample1.pdf',
+            'proposal_permohonan_path' => 'proposals/sample2.pdf',
+            'start_time' => Carbon::now()->addDays(1)->setHour(9)->setMinute(0),
+            'end_time' => Carbon::now()->addDays(1)->setHour(11)->setMinute(0),
+            'status' => 'approved',
+        ]);
+
+        $response = $this->actingAs($petugas)->post("/reservations/{$reservation->id}/cancel-by-petugas", [
+            'reason' => 'Fasilitas mendadak mati listrik total dan renovasi darurat.',
+        ]);
+
+        $response->assertSessionHas('success');
+        $this->assertDatabaseHas('reservations', [
+            'id' => $reservation->id,
+            'status' => 'cancelled',
+            'cancel_reason' => 'Fasilitas mendadak mati listrik total dan renovasi darurat.',
+        ]);
+    }
+
+    public function test_petugas_cannot_cancel_approved_reservation_without_reason(): void
+    {
+        $petugas = User::factory()->petugas()->create();
+        $reservation = Reservation::create([
+            'user_id' => $this->user->id,
+            'facility_id' => $this->facility->id,
+            'purpose' => 'Latihan Olahraga',
+            'proposal_kegiatan_path' => 'proposals/sample1.pdf',
+            'proposal_permohonan_path' => 'proposals/sample2.pdf',
+            'start_time' => Carbon::now()->addDays(1)->setHour(13)->setMinute(0),
+            'end_time' => Carbon::now()->addDays(1)->setHour(15)->setMinute(0),
+            'status' => 'approved',
+        ]);
+
+        $response = $this->actingAs($petugas)->post("/reservations/{$reservation->id}/cancel-by-petugas", [
+            'reason' => '',
+        ]);
+
+        $response->assertSessionHasErrors(['reason']);
+        $this->assertDatabaseHas('reservations', [
+            'id' => $reservation->id,
+            'status' => 'approved',
+        ]);
+    }
+
+    public function test_regular_user_cannot_cancel_approved_reservation_via_petugas_route(): void
+    {
+        $reservation = Reservation::create([
+            'user_id' => $this->user->id,
+            'facility_id' => $this->facility->id,
+            'purpose' => 'Rapat Internal',
+            'proposal_kegiatan_path' => 'proposals/sample1.pdf',
+            'proposal_permohonan_path' => 'proposals/sample2.pdf',
+            'start_time' => Carbon::now()->addDays(1)->setHour(10)->setMinute(0),
+            'end_time' => Carbon::now()->addDays(1)->setHour(12)->setMinute(0),
+            'status' => 'approved',
+        ]);
+
+        $response = $this->actingAs($this->user)->post("/reservations/{$reservation->id}/cancel-by-petugas", [
+            'reason' => 'Ingin batalkan sendiri',
+        ]);
+
+        $response->assertStatus(403);
+    }
+
+    public function test_petugas_cannot_cancel_past_approved_reservation(): void
+    {
+        $petugas = User::factory()->petugas()->create();
+        $pastReservation = Reservation::create([
+            'user_id' => $this->user->id,
+            'facility_id' => $this->facility->id,
+            'purpose' => 'Kegiatan kemarin',
+            'proposal_kegiatan_path' => 'proposals/sample1.pdf',
+            'proposal_permohonan_path' => 'proposals/sample2.pdf',
+            'start_time' => Carbon::now()->subDays(2)->setHour(9)->setMinute(0),
+            'end_time' => Carbon::now()->subDays(2)->setHour(11)->setMinute(0),
+            'status' => 'approved',
+        ]);
+
+        $response = $this->actingAs($petugas)->post("/reservations/{$pastReservation->id}/cancel-by-petugas", [
+            'reason' => 'Mau membatalkan yang sudah lewat',
+        ]);
+
+        $response->assertSessionHas('error');
+        $this->assertDatabaseHas('reservations', [
+            'id' => $pastReservation->id,
+            'status' => 'approved',
+        ]);
+    }
 }
 
