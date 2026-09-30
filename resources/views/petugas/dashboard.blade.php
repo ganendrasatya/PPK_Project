@@ -102,6 +102,10 @@
                             <p class="text-xs text-red-700 mt-2 bg-red-50 border border-red-100 p-2 rounded">
                                 <span class="font-semibold">Alasan penolakan:</span> {{ $reservation->cancel_reason }}
                             </p>
+                        @elseif ($reservation->status === 'cancelled' && $reservation->cancel_reason)
+                            <p class="text-xs text-red-700 mt-2 bg-red-50 border border-red-100 p-2 rounded">
+                                <span class="font-semibold">Alasan pembatalan:</span> {{ $reservation->cancel_reason }}
+                            </p>
                         @endif
                     </div>
 
@@ -125,6 +129,14 @@
                                     class="inline-flex items-center gap-1.5 bg-white border border-red-200 text-red-600 hover:bg-red-50 text-sm font-semibold px-4 py-2 rounded-lg transition-colors">
                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                                     Tolak
+                                </button>
+                            </div>
+                        @elseif ($reservation->status === 'approved' && $reservation->end_time->isFuture())
+                            <div>
+                                <button type="button" x-data="" @click="$dispatch('open-modal', 'cancel-approved-reservation-{{ $reservation->id }}')"
+                                    class="inline-flex items-center gap-1.5 bg-white border border-red-300 text-red-600 hover:bg-red-50 text-sm font-semibold px-4 py-2 rounded-lg transition-colors">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                    Batalkan Reservasi
                                 </button>
                             </div>
                         @endif
@@ -199,6 +211,10 @@
                             <p class="text-xs text-red-700 mt-4 bg-red-50 border border-red-100 p-2.5 rounded">
                                 <span class="font-semibold">Alasan penolakan:</span> {{ $reservation->cancel_reason }}
                             </p>
+                        @elseif ($reservation->status === 'cancelled' && $reservation->cancel_reason)
+                            <p class="text-xs text-red-700 mt-4 bg-red-50 border border-red-100 p-2.5 rounded">
+                                <span class="font-semibold">Alasan pembatalan:</span> {{ $reservation->cancel_reason }}
+                            </p>
                         @endif
 
                         @if ($reservation->status === 'pending')
@@ -210,6 +226,15 @@
                                     @csrf
                                     <button type="submit" class="bg-teal-700 hover:bg-teal-800 text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-sm transition-colors">Setujui</button>
                                 </form>
+                            </div>
+                        @elseif ($reservation->status === 'approved' && $reservation->end_time->isFuture())
+                            <div class="mt-6 flex items-center justify-end gap-2 pt-4 border-t border-gray-100">
+                                <button type="button" x-data=""
+                                    @click="$dispatch('close-modal', 'reservation-detail-{{ $reservation->id }}'); $dispatch('open-modal', 'cancel-approved-reservation-{{ $reservation->id }}')"
+                                    class="inline-flex items-center gap-1.5 bg-white border border-red-300 text-red-600 hover:bg-red-50 text-sm font-semibold px-4 py-2 rounded-lg transition-colors">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                    Batalkan Reservasi
+                                </button>
                             </div>
                         @endif
                     </div>
@@ -243,6 +268,46 @@
                         </div>
                     </form>
                 </x-modal>
+
+                @if ($reservation->status === 'approved')
+                    <!-- Petugas Cancel Approved Reservation Modal -->
+                    <x-modal name="cancel-approved-reservation-{{ $reservation->id }}" max-width="md">
+                        <form method="POST" action="{{ route('reservations.cancel-by-petugas', $reservation) }}" class="p-6">
+                            @csrf
+                            <div class="flex items-center gap-3 text-red-600 mb-2">
+                                <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                                    <svg class="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-gray-900 text-lg">Batalkan Reservasi Mendesak</h3>
+                                    <p class="text-xs text-gray-500">Reservasi #RSV-{{ str_pad($reservation->id, 5, '0', STR_PAD_LEFT) }}</p>
+                                </div>
+                            </div>
+                            
+                            <p class="text-sm text-gray-600 mt-2">
+                                Anda akan membatalkan reservasi yang sudah disetujui untuk pemohon <span class="font-semibold text-gray-800">{{ $reservation->user->name ?? 'Pengguna' }}</span> pada fasilitas <span class="font-semibold text-gray-800">{{ $reservation->facility->nama_fasilitas ?? 'Fasilitas' }}</span>.
+                            </p>
+
+                            <div class="mt-4">
+                                <label class="block font-semibold text-sm text-gray-700 mb-1">Alasan Pembatalan Mendesak <span class="text-red-500">*</span></label>
+                                <textarea name="reason" rows="3" required maxlength="255"
+                                    placeholder="Contoh: Fasilitas mengalami kerusakan mendadak atau ada agenda darurat kampus..."
+                                    class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm shadow-sm focus:ring-red-500 focus:border-red-500"></textarea>
+                            </div>
+
+                            <div class="mt-6 flex items-center justify-end gap-2">
+                                <button type="button" @click="show = false" class="text-sm font-semibold text-gray-600 hover:text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+                                    Tutup
+                                </button>
+                                <button type="submit" class="bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-sm transition-colors">
+                                    Konfirmasi Batalkan
+                                </button>
+                            </div>
+                        </form>
+                    </x-modal>
+                @endif
             @empty
                 <div class="text-center py-16 bg-white rounded-xl border border-dashed border-gray-300">
                     <svg class="mx-auto h-12 w-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
