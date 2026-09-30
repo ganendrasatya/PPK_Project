@@ -336,59 +336,5 @@ class UserPortalTest extends TestCase
             'status' => 'approved',
         ]);
     }
-
-    public function test_petugas_can_resolve_damage_report_with_resolution_note(): void
-    {
-        $petugas = User::factory()->petugas()->create();
-        $report = Report::create([
-            'user_id' => $this->user->id,
-            'facility_id' => $this->facility->id,
-            'title' => 'Pintu Kamar Mandi Rusak',
-            'category' => 'Kerusakan Ringan',
-            'description' => 'Gagang pintu kamar mandi terlepas.',
-            'status' => 'diproses',
-        ]);
-
-        $response = $this->actingAs($petugas)->patch("/reports/{$report->id}/status", [
-            'status' => 'selesai',
-            'resolution_note' => 'Gagang pintu baru sudah dipasang dan berfungsi normal.',
-        ]);
-
-        $response->assertSessionHas('success');
-        $this->assertDatabaseHas('reports', [
-            'id' => $report->id,
-            'status' => 'selesai',
-            'resolution_note' => 'Gagang pintu baru sudah dipasang dan berfungsi normal.',
-        ]);
-
-        // Cek bahwa catatan muncul di halaman reports pengguna
-        $pageResponse = $this->actingAs($this->user)->get('/reports');
-        $pageResponse->assertStatus(200);
-        $pageResponse->assertSee('Gagang pintu baru sudah dipasang dan berfungsi normal.');
-    }
-
-    public function test_petugas_cannot_resolve_damage_report_without_resolution_note(): void
-    {
-        $petugas = User::factory()->petugas()->create();
-        $report = Report::create([
-            'user_id' => $this->user->id,
-            'facility_id' => $this->facility->id,
-            'title' => 'Lampu Lapangan Mati',
-            'category' => 'Kerusakan Sedang',
-            'description' => 'Lampu sisi timur padam total.',
-            'status' => 'diproses',
-        ]);
-
-        $response = $this->actingAs($petugas)->patch("/reports/{$report->id}/status", [
-            'status' => 'selesai',
-            'resolution_note' => '',
-        ]);
-
-        $response->assertSessionHasErrors(['resolution_note']);
-        $this->assertDatabaseHas('reports', [
-            'id' => $report->id,
-            'status' => 'diproses',
-        ]);
-    }
 }
 

@@ -90,9 +90,7 @@ class DamageReportController extends Controller
 
         $validated = $request->validate([
             'status' => 'required|in:baru,diproses,selesai,ditolak',
-            'resolution_note' => ['required_if:status,ditolak,selesai', 'nullable', 'string', 'max:255'],
-        ], [
-            'resolution_note.required_if' => 'Catatan resolusi wajib diisi saat laporan diselesaikan atau ditolak.',
+            'resolution_note' => ['required_if:status,ditolak', 'nullable', 'string', 'max:255'],
         ]);
 
         $report->update([
