@@ -88,10 +88,22 @@ class DamageReportController extends Controller
             abort(403, 'Aksi ini hanya dapat dilakukan oleh petugas atau admin.');
         }
 
-        $validated = $request->validate([
+        $rules = [
             'status' => 'required|in:baru,diproses,selesai,ditolak',
-            'resolution_note' => ['required_if:status,ditolak', 'nullable', 'string', 'max:255'],
-        ]);
+            'resolution_note' => [
+                'nullable',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) use ($request) {
+                    $status = $request->input('status');
+                    if (in_array($status, ['selesai', 'ditolak']) && empty(trim($value ?? ''))) {
+                        $fail('Catatan resolusi wajib diisi saat laporan diselesaikan atau ditolak.');
+                    }
+                },
+            ],
+        ];
+
+        $validated = $request->validate($rules);
 
         $report->update([
             'status' => $validated['status'],
