@@ -98,6 +98,10 @@ class DamageReportController extends Controller
             'resolution_note' => $validated['resolution_note'] ?? $report->resolution_note,
         ]);
 
+        if ($request->boolean('reactivate_facility') && $report->facility) {
+            $report->facility->update(['status' => 'aktif']);
+        }
+
         return back()->with('success', 'Status penanganan laporan berhasil diperbarui menjadi ' . ucfirst($validated['status']) . '.');
     }
 }

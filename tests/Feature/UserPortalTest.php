@@ -336,5 +336,126 @@ class UserPortalTest extends TestCase
             'status' => 'approved',
         ]);
     }
+
+    public function test_petugas_can_resolve_damage_report_with_resolution_note(): void
+    {
+        $petugas = User::factory()->petugas()->create();
+        $report = Report::create([
+            'user_id' => $this->user->id,
+            'facility_id' => $this->facility->id,
+            'title' => 'Pintu Kamar Mandi Rusak',
+            'category' => 'Kerusakan Ringan',
+            'description' => 'Gagang pintu kamar mandi terlepas.',
+            'status' => 'diproses',
+        ]);
+
+        $response = $this->actingAs($petugas)->patch("/reports/{$report->id}/status", [
+            'status' => 'selesai',
+            'resolution_note' => 'Gagang pintu baru sudah dipasang dan berfungsi normal.',
+        ]);
+
+        $response->assertSessionHas('success');
+        $this->assertDatabaseHas('reports', [
+            'id' => $report->id,
+            'status' => 'selesai',
+            'resolution_note' => 'Gagang pintu baru sudah dipasang dan berfungsi normal.',
+        ]);
+
+        // Cek bahwa catatan muncul di halaman reports pengguna
+        $pageResponse = $this->actingAs($this->user)->get('/reports');
+        $pageResponse->assertStatus(200);
+        $pageResponse->assertSee('Gagang pintu baru sudah dipasang dan berfungsi normal.');
+    }
+
+    public function test_petugas_cannot_resolve_damage_report_without_resolution_note(): void
+    {
+        $petugas = User::factory()->petugas()->create();
+        $report = Report::create([
+            'user_id' => $this->user->id,
+            'facility_id' => $this->facility->id,
+            'title' => 'Lampu Lapangan Mati',
+            'category' => 'Kerusakan Sedang',
+            'description' => 'Lampu sisi timur padam total.',
+            'status' => 'diproses',
+        ]);
+
+        $response = $this->actingAs($petugas)->patch("/reports/{$report->id}/status", [
+            'status' => 'selesai',
+            'resolution_note' => '',
+        ]);
+
+        $response->assertSessionHasErrors(['resolution_note']);
+        $this->assertDatabaseHas('reports', [
+            'id' => $report->id,
+            'status' => 'diproses',
+        ]);
+    }
+
+    public function test_petugas_can_update_facility_status(): void
+    {
+        $petugas = User::factory()->petugas()->create();
+
+        // Tandai dalam perbaikan
+        $response = $this->actingAs($petugas)->patch("/facilities/{$this->facility->id}/status", [
+            'status' => 'dalam_perbaikan',
+        ]);
+
+        $response->assertSessionHas('success');
+        $this->assertDatabaseHas('facilities', [
+            'id' => $this->facility->id,
+            'status' => 'dalam_perbaikan',
+        ]);
+
+        // Kembalikan ke aktif
+        $response2 = $this->actingAs($petugas)->patch("/facilities/{$this->facility->id}/status", [
+            'status' => 'aktif',
+        ]);
+
+        $response2->assertSessionHas('success');
+        $this->assertDatabaseHas('facilities', [
+            'id' => $this->facility->id,
+            'status' => 'aktif',
+        ]);
+    }
+
+    public function test_regular_user_cannot_update_facility_status(): void
+    {
+        $response = $this->actingAs($this->user)->patch("/facilities/{$this->facility->id}/status", [
+            'status' => 'dalam_perbaikan',
+        ]);
+
+        $response->assertStatus(403);
+    }
+
+    public function test_resolving_damage_report_can_reactivate_facility(): void
+    {
+        $petugas = User::factory()->petugas()->create();
+        $this->facility->update(['status' => 'dalam_perbaikan']);
+
+        $report = Report::create([
+            'user_id' => $this->user->id,
+            'facility_id' => $this->facility->id,
+            'title' => 'Kerusakan Pipa Air',
+            'category' => 'Kerusakan Berat',
+            'description' => 'Pipa bocor membanjiri lantai lapangan.',
+            'status' => 'diproses',
+        ]);
+
+        $response = $this->actingAs($petugas)->patch("/reports/{$report->id}/status", [
+            'status' => 'selesai',
+            'resolution_note' => 'Pipa air sudah diganti dan area dibersihkan.',
+            'reactivate_facility' => 1,
+        ]);
+
+        $response->assertSessionHas('success');
+        $this->assertDatabaseHas('reports', [
+            'id' => $report->id,
+            'status' => 'selesai',
+        ]);
+        $this->assertDatabaseHas('facilities', [
+            'id' => $this->facility->id,
+            'status' => 'aktif',
+        ]);
+    }
 }
 

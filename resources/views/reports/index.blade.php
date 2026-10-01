@@ -221,6 +221,8 @@
 
                             @if ($report->status === 'ditolak' && $report->resolution_note)
                                 <p class="text-sm text-red-700 mt-2 bg-red-50 p-2.5 rounded-lg border border-red-100"><span class="font-semibold">Alasan ditolak:</span> {{ $report->resolution_note }}</p>
+                            @elseif ($report->status === 'selesai' && $report->resolution_note)
+                                <p class="text-sm text-emerald-800 mt-2 bg-emerald-50 p-2.5 rounded-lg border border-emerald-100"><span class="font-semibold">Catatan resolusi/solusi:</span> {{ $report->resolution_note }}</p>
                             @endif
 
                             <div class="flex items-center gap-2 mt-3 text-xs text-gray-400 font-medium">
@@ -308,6 +310,57 @@
                                         {{ $mReport->facility->nama_fasilitas ?? 'Fasilitas' }} &middot; {{ $mReport->user->name ?? 'Pengguna' }} &middot; {{ $mReport->created_at->format('d M Y, H:i') }}
                                     </div>
                                     <p class="text-xs text-gray-600 mt-1">{{ $mReport->description }}</p>
+
+                                    @if ($mReport->resolution_note)
+                                        <p class="text-xs {{ $mReport->status === 'ditolak' ? 'text-red-700 bg-red-50 border-red-200' : 'text-emerald-800 bg-emerald-50 border-emerald-200' }} mt-1.5 p-2 rounded-lg border">
+                                            <span class="font-semibold">{{ $mReport->status === 'ditolak' ? 'Alasan penolakan:' : 'Catatan resolusi:' }}</span> {{ $mReport->resolution_note }}
+                                        </p>
+                                    @endif
+
+                                    @if($mReport->facility)
+                                        <div class="mt-2.5 flex flex-wrap items-center gap-2 bg-white/90 border border-gray-200 rounded-lg p-2 text-xs">
+                                            <span class="text-gray-500 font-medium">Status Fasilitas:</span>
+                                            @if($mReport->facility->status === 'aktif')
+                                                <span class="bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Aktif
+                                                </span>
+                                                <form method="POST" action="{{ route('petugas.facilities.update-status', $mReport->facility) }}" class="inline">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <input type="hidden" name="status" value="dalam_perbaikan">
+                                                    <button type="submit" onclick="return confirm('Tandai fasilitas {{ $mReport->facility->nama_fasilitas }} sebagai Dalam Perbaikan? Pengguna tidak dapat mereservasi fasilitas ini sementara waktu.')"
+                                                        class="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-semibold px-2 py-0.5 rounded transition-colors flex items-center gap-1 text-[11px]">
+                                                        <svg class="w-3 h-3 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.162 1.15-.1 1.667.18 1.107.597 1.517 1.968.92 3.076a2.25 2.25 0 01-1.01 1.01" /></svg>
+                                                        Tandai Dalam Perbaikan
+                                                    </button>
+                                                </form>
+                                            @elseif($mReport->facility->status === 'dalam_perbaikan')
+                                                <span class="bg-amber-100 text-amber-800 font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> Dalam Perbaikan
+                                                </span>
+                                                <form method="POST" action="{{ route('petugas.facilities.update-status', $mReport->facility) }}" class="inline">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <input type="hidden" name="status" value="aktif">
+                                                    <button type="submit" onclick="return confirm('Kembalikan status fasilitas {{ $mReport->facility->nama_fasilitas }} menjadi Aktif? Fasilitas akan siap direservasi kembali.')"
+                                                        class="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-semibold px-2 py-0.5 rounded transition-colors flex items-center gap-1 text-[11px]">
+                                                        <svg class="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                                                        Kembalikan ke Aktif
+                                                    </button>
+                                                </form>
+                                            @else
+                                                <span class="bg-gray-100 text-gray-700 font-semibold px-2 py-0.5 rounded-full text-[11px]">Nonaktif</span>
+                                                <form method="POST" action="{{ route('petugas.facilities.update-status', $mReport->facility) }}" class="inline">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <input type="hidden" name="status" value="aktif">
+                                                    <button type="submit" class="bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-300 font-semibold px-2 py-0.5 rounded transition-colors text-[11px]">
+                                                        Aktifkan
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
 
@@ -324,14 +377,10 @@
                                     </form>
                                 @endif
                                 @if($mReport->status !== 'selesai')
-                                    <form action="{{ route('reports.update-status', $mReport) }}" method="POST">
-                                        @csrf
-                                        @method('PATCH')
-                                        <input type="hidden" name="status" value="selesai">
-                                        <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-1.5 rounded-lg shadow-sm transition-colors">
-                                            Selesai
-                                        </button>
-                                    </form>
+                                    <button type="button" x-data="" @click="$dispatch('open-modal', 'resolve-report-{{ $mReport->id }}')"
+                                        class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-1.5 rounded-lg shadow-sm transition-colors">
+                                        Selesai
+                                    </button>
                                 @endif
                                 @if($mReport->status !== 'ditolak')
                                     <button type="button" x-data="" @click="$dispatch('open-modal', 'reject-report-{{ $mReport->id }}')"
@@ -341,6 +390,45 @@
                                 @endif
                             </div>
                         </div>
+
+                        <!-- Modal Selesaikan Laporan -->
+                        <x-modal name="resolve-report-{{ $mReport->id }}" max-width="md">
+                            <form method="POST" action="{{ route('reports.update-status', $mReport) }}" class="p-6">
+                                @csrf
+                                @method('PATCH')
+                                <input type="hidden" name="status" value="selesai">
+                                <h3 class="font-bold text-gray-900 text-lg">Tutup & Selesaikan Laporan</h3>
+                                <p class="text-sm text-gray-500 mt-1">
+                                    Laporan <span class="font-semibold text-gray-700">"{{ $mReport->title }}"</span> akan ditandai selesai.
+                                    Tuliskan catatan resolusi atau tindakan perbaikan yang telah dilakukan.
+                                </p>
+
+                                <div class="mt-4">
+                                    <label class="block font-semibold text-sm text-gray-700 mb-1">Catatan Resolusi / Tindakan Perbaikan <span class="text-emerald-600">*</span></label>
+                                    <textarea name="resolution_note" rows="3" required maxlength="255"
+                                        placeholder="Contoh: Perbaikan fasilitas telah selesai dikerjakan oleh teknisi kampus..."
+                                        class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm shadow-sm focus:ring-emerald-500 focus:border-emerald-500"></textarea>
+                                </div>
+
+                                @if($mReport->facility && $mReport->facility->status === 'dalam_perbaikan')
+                                    <div class="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900">
+                                        <label class="flex items-center gap-2 cursor-pointer font-medium">
+                                            <input type="checkbox" name="reactivate_facility" value="1" checked class="rounded border-amber-300 text-emerald-600 focus:ring-emerald-500">
+                                            Kembalikan status fasilitas ({{ $mReport->facility->nama_fasilitas }}) menjadi 'Aktif'
+                                        </label>
+                                    </div>
+                                @endif
+
+                                <div class="mt-6 flex items-center justify-end gap-2">
+                                    <button type="button" @click="show = false" class="text-sm font-semibold text-gray-600 hover:text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+                                        Batal
+                                    </button>
+                                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-sm transition-colors">
+                                        Simpan & Tandai Selesai
+                                    </button>
+                                </div>
+                            </form>
+                        </x-modal>
 
                         <x-modal name="reject-report-{{ $mReport->id }}" max-width="md">
                             <form method="POST" action="{{ route('reports.update-status', $mReport) }}" class="p-6">

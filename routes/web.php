@@ -37,12 +37,13 @@ Route::middleware(['auth', 'account.verified'])->group(function () {
     Route::post('/reports', [DamageReportController::class, 'store'])->name('reports.store');
     Route::patch('/reports/{report}/status', [DamageReportController::class, 'updateStatus'])->name('reports.update-status');
 
-    // Petugas: kelola & setujui/tolak/batalkan reservasi
+    // Petugas: kelola & setujui/tolak/batalkan reservasi & status fasilitas
     Route::middleware('role:petugas,admin')->group(function () {
         Route::get('/petugas', [PetugasController::class, 'dashboard'])->name('petugas.dashboard');
         Route::post('/reservations/{reservation}/approve', [ReservationController::class, 'approve'])->name('reservations.approve');
         Route::post('/reservations/{reservation}/reject', [ReservationController::class, 'reject'])->name('reservations.reject');
         Route::post('/reservations/{reservation}/cancel-by-petugas', [ReservationController::class, 'cancelByPetugas'])->name('reservations.cancel-by-petugas');
+        Route::patch('/facilities/{facility}/status', [FacilityController::class, 'updateStatus'])->name('petugas.facilities.update-status');
     });
 });
 

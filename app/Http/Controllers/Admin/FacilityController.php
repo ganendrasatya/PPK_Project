@@ -90,6 +90,8 @@ class FacilityController extends Controller
 
         $facility->update(['status' => $request->string('status')]);
 
-        return back()->with('status', "Status fasilitas {$facility->nama_fasilitas} berhasil diperbarui.");
+        $message = "Status fasilitas {$facility->nama_fasilitas} berhasil diperbarui menjadi " . ($request->string('status') === 'dalam_perbaikan' ? 'Dalam Perbaikan' : ucfirst($request->string('status'))) . '.';
+
+        return back()->with('status', $message)->with('success', $message);
     }
 }
