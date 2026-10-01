@@ -90,20 +90,17 @@ class DamageReportController extends Controller
 
         $rules = [
             'status' => 'required|in:baru,diproses,selesai,ditolak',
-            'resolution_note' => [
-                'nullable',
-                'string',
-                'max:255',
-                function ($attribute, $value, $fail) use ($request) {
-                    $status = $request->input('status');
-                    if (in_array($status, ['selesai', 'ditolak']) && empty(trim($value ?? ''))) {
-                        $fail('Catatan resolusi wajib diisi saat laporan diselesaikan atau ditolak.');
-                    }
-                },
-            ],
         ];
 
-        $validated = $request->validate($rules);
+        if (in_array($request->input('status'), ['selesai', 'ditolak'])) {
+            $rules['resolution_note'] = 'required|string|max:255';
+        } else {
+            $rules['resolution_note'] = 'nullable|string|max:255';
+        }
+
+        $validated = $request->validate($rules, [
+            'resolution_note.required' => 'Catatan resolusi wajib diisi saat laporan diselesaikan atau ditolak.',
+        ]);
 
         $report->update([
             'status' => $validated['status'],
