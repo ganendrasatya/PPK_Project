@@ -26,9 +26,20 @@
                 </div>
             </div>
             <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-                <div class="text-teal-600 text-sm font-medium uppercase tracking-wide">Fasilitas Aktif</div>
-                <div class="text-4xl font-bold mt-2 text-gray-900">{{ $activeFacilities }}</div>
-                <div class="text-xs text-gray-400 mt-2 font-medium">Siap direservasi pengguna</div>
+                <div class="flex items-center justify-between">
+                    <div class="text-teal-600 text-sm font-medium uppercase tracking-wide">Fasilitas Aktif</div>
+                    <button type="button" x-data="" @click="$dispatch('open-modal', 'manage-facilities-status')"
+                        class="text-xs text-teal-700 hover:text-teal-900 bg-teal-50 hover:bg-teal-100 border border-teal-200 px-2 py-0.5 rounded-lg font-semibold transition-colors">
+                        Kelola Status &rarr;
+                    </button>
+                </div>
+                <div class="text-4xl font-bold mt-2 text-gray-900">{{ $activeFacilities }} <span class="text-sm font-normal text-gray-400">/ {{ $allFacilities->count() }}</span></div>
+                <div class="text-xs text-gray-400 mt-2 font-medium">
+                    @if($inRepairFacilities > 0)
+                        <span class="text-amber-600 font-semibold">{{ $inRepairFacilities }} dalam perbaikan</span> &middot;
+                    @endif
+                    Siap direservasi pengguna
+                </div>
             </div>
         </div>
 
@@ -320,5 +331,87 @@
         <div class="mt-6 pb-6">
             {{ $reservations->links() }}
         </div>
+
+        <!-- Modal Kelola Status Fasilitas oleh Petugas -->
+        <x-modal name="manage-facilities-status" max-width="2xl">
+            <div class="p-6">
+                <div class="flex items-start justify-between pb-4 border-b border-gray-100">
+                    <div>
+                        <h3 class="font-bold text-gray-900 text-lg">Kelola Status Fasilitas Kampus</h3>
+                        <p class="text-xs text-gray-500 mt-0.5">Tandai fasilitas 'Dalam Perbaikan' saat terjadi kendala/kerusakan, atau aktifkan kembali setelah perbaikan selesai.</p>
+                    </div>
+                    <button type="button" @click="show = false" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+
+                <div class="mt-4 divide-y divide-gray-100 max-h-96 overflow-y-auto pr-1">
+                    @foreach($allFacilities as $fac)
+                        <div class="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h4 class="font-semibold text-gray-900 text-sm">{{ $fac->nama_fasilitas }}</h4>
+                                    @if($fac->status === 'aktif')
+                                        <span class="bg-emerald-100 text-emerald-800 text-[11px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Aktif
+                                        </span>
+                                    @elseif($fac->status === 'dalam_perbaikan')
+                                        <span class="bg-amber-100 text-amber-800 text-[11px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> Dalam Perbaikan
+                                        </span>
+                                    @else
+                                        <span class="bg-gray-100 text-gray-700 text-[11px] font-semibold px-2 py-0.5 rounded-full">
+                                            Nonaktif
+                                        </span>
+                                    @endif
+                                </div>
+                                <p class="text-xs text-gray-500 mt-0.5">{{ $fac->tipe }} &middot; {{ $fac->lokasi }} &middot; Kapasitas {{ $fac->kapasitas }} org</p>
+                            </div>
+
+                            <div class="flex items-center gap-2 shrink-0">
+                                @if($fac->status === 'aktif')
+                                    <form method="POST" action="{{ route('petugas.facilities.update-status', $fac) }}">
+                                        @csrf
+                                        @method('PATCH')
+                                        <input type="hidden" name="status" value="dalam_perbaikan">
+                                        <button type="submit" onclick="return confirm('Tandai fasilitas {{ $fac->nama_fasilitas }} sebagai Dalam Perbaikan? Pengguna tidak akan dapat meminjam fasilitas ini sementara waktu.')"
+                                            class="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
+                                            <svg class="w-3.5 h-3.5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.162 1.15-.1 1.667.18 1.107.597 1.517 1.968.92 3.076a2.25 2.25 0 01-1.01 1.01" /></svg>
+                                            Tandai Perbaikan
+                                        </button>
+                                    </form>
+                                @elseif($fac->status === 'dalam_perbaikan')
+                                    <form method="POST" action="{{ route('petugas.facilities.update-status', $fac) }}">
+                                        @csrf
+                                        @method('PATCH')
+                                        <input type="hidden" name="status" value="aktif">
+                                        <button type="submit" onclick="return confirm('Kembalikan status fasilitas {{ $fac->nama_fasilitas }} menjadi Aktif? Fasilitas akan siap direservasi kembali.')"
+                                            class="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
+                                            <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                                            Aktifkan Kembali
+                                        </button>
+                                    </form>
+                                @else
+                                    <form method="POST" action="{{ route('petugas.facilities.update-status', $fac) }}">
+                                        @csrf
+                                        @method('PATCH')
+                                        <input type="hidden" name="status" value="aktif">
+                                        <button type="submit" class="bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-300 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors">
+                                            Aktifkan
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+
+                <div class="mt-6 pt-4 border-t border-gray-100 flex justify-end">
+                    <button type="button" @click="show = false" class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold px-4 py-2 rounded-lg transition-colors">
+                        Tutup
+                    </button>
+                </div>
+            </div>
+        </x-modal>
     </div>
 </x-catalog-layout>

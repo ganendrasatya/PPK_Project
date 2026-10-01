@@ -42,6 +42,8 @@ class PetugasController extends Controller
             'counts' => $counts,
             'tab' => $tab,
             'activeFacilities' => Facility::where('status', 'aktif')->count(),
+            'inRepairFacilities' => Facility::where('status', 'dalam_perbaikan')->count(),
+            'allFacilities' => Facility::orderBy('nama_fasilitas')->get(),
             'openReports' => Report::whereIn('status', ['baru', 'diproses'])->count(),
         ]);
     }
