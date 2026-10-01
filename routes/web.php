@@ -56,6 +56,7 @@ Route::middleware(['auth', 'account.verified', 'role:admin'])->prefix('admin')->
     Route::get('/users/pending', [AdminUserController::class, 'pending'])->name('users.pending');
     Route::post('/users/{user}/approve', [AdminUserController::class, 'approve'])->name('users.approve');
     Route::post('/users/{user}/reject', [AdminUserController::class, 'reject'])->name('users.reject');
+    Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
     Route::get('/users/create-petugas', [AdminUserController::class, 'createPetugas'])->name('users.create-petugas');
     Route::post('/users/create-petugas', [AdminUserController::class, 'storePetugas'])->name('users.store-petugas');
     Route::get('/users/create-pengguna', [AdminUserController::class, 'createPengguna'])->name('users.create-pengguna');
@@ -68,8 +69,6 @@ Route::middleware(['auth', 'account.verified', 'role:admin'])->prefix('admin')->
     // Recap & Export
     Route::get('/recap', [RecapController::class, 'index'])->name('recap.index');
     Route::get('/recap/export.csv', [RecapController::class, 'exportCsv'])->name('recap.export');
-    Route::get('/recap/export.xlsx', [RecapController::class, 'exportExcel'])->name('recap.export-excel');
-    Route::get('/recap/export.pdf', [RecapController::class, 'exportPdf'])->name('recap.export-pdf');
 });
 
 require __DIR__.'/auth.php';
