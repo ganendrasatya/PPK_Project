@@ -1,20 +1,22 @@
 <x-admin-layout>
     <x-slot name="header">
-        <p class="text-xs font-semibold tracking-wide text-emerald-700 uppercase">Data Master</p>
-        <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mt-1">Tambah Fasilitas</h1>
-        <p class="text-slate-500 mt-1">Lengkapi detail fasilitas baru agar bisa direservasi pengguna.</p>
+        <p class="text-xs font-semibold tracking-wider text-teal-600 uppercase">Data Master</p>
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">Tambah Fasilitas Baru</h1>
+        <p class="text-gray-500 mt-1">Lengkapi detail fasilitas baru agar bisa langsung direservasi oleh civitas akademika.</p>
     </x-slot>
 
-    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 p-6 max-w-2xl">
-        <form method="POST" action="{{ route('admin.facilities.store') }}">
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 max-w-2xl">
+        <form method="POST" action="{{ route('admin.facilities.store') }}" enctype="multipart/form-data">
             @csrf
             @include('admin.facilities._form')
 
             <div class="mt-6 flex items-center gap-3">
-                <button type="submit" class="px-5 py-2.5 bg-emerald-800 rounded-xl font-semibold text-sm text-white shadow-sm hover:bg-emerald-900 transition">
-                    {{ __('Simpan') }}
+                <button type="submit" class="px-5 py-2.5 bg-teal-600 rounded-lg font-semibold text-sm text-white shadow-sm hover:bg-teal-700 transition">
+                    Simpan Fasilitas
                 </button>
-                <a href="{{ route('admin.facilities.index') }}" class="text-sm text-slate-500 hover:text-slate-800">Batal</a>
+                <a href="{{ route('admin.facilities.index') }}" class="px-4 py-2.5 bg-white border border-gray-300 rounded-lg font-semibold text-sm text-gray-700 hover:bg-gray-50 transition">
+                    Batal
+                </a>
             </div>
         </form>
     </div>

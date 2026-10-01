@@ -57,8 +57,8 @@
                                 {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
                             </div>
                             <div class="flex flex-col">
-                                <span class="text-sm font-bold text-gray-800 leading-none">{{ auth()->user()->name }}</span>
-                                <span class="text-xs text-teal-600 font-medium mt-1">{{ auth()->user()->role ?? 'Sivitas Akademika' }}</span>
+                                <a href="{{ route('profile.edit') }}" class="text-sm font-bold text-gray-800 leading-none hover:text-teal-700 transition-colors">{{ auth()->user()->name }}</a>
+                                <span class="text-xs text-teal-600 font-medium mt-1">{{ ucfirst(auth()->user()->role ?? 'Sivitas Akademika') }}</span>
                             </div>
                             <form method="POST" action="{{ route('logout') }}" class="ml-4">
                                 @csrf
