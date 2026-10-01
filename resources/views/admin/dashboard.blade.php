@@ -69,7 +69,7 @@
         </a>
         <a href="{{ route('admin.recap.index') }}" class="bg-white rounded-2xl p-5 ring-1 ring-slate-900/5 hover:ring-emerald-300 transition shadow-sm">
             <p class="font-semibold text-slate-800">Rekap & Export</p>
-            <p class="text-sm text-slate-500 mt-1">Lihat okupansi fasilitas & unduh CSV.</p>
+            <p class="text-sm text-slate-500 mt-1">Lihat okupansi fasilitas & unduh CSV, Excel, atau PDF.</p>
         </a>
     </div>
 </x-admin-layout>
