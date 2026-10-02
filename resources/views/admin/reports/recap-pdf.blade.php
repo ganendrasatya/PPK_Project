@@ -13,6 +13,10 @@
         tr:nth-child(even) td { background: #f9fafb; }
         .num { text-align: right; }
         tfoot td { font-weight: bold; border-top: 2px solid #0f766e; background: #fff; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600; }
+        .aktif     { background: #d1fae5; color: #065f46; }
+        .perbaikan { background: #fef3c7; color: #92400e; }
+        .nonaktif  { background: #f3f4f6; color: #374151; }
     </style>
 </head>
 <body>
@@ -32,30 +36,36 @@
             </tr>
         </thead>
         <tbody>
-            @forelse ($facilities as $facility)
-                <tr>
-                    <td>{{ $loop->iteration }}</td>
-                    <td>{{ $facility->nama_fasilitas }}</td>
-                    <td>{{ $facility->tipe }}</td>
-                    <td>{{ $facility->lokasi }}</td>
-                    <td>{{ $facility->status_label }}</td>
-                    <td class="num">{{ $facility->reservations_count }}</td>
-                    <td class="num">{{ $facility->reports_count }}</td>
-                </tr>
+            @forelse ($facilities as $f)
+            <tr>
+                <td>{{ $loop->iteration }}</td>
+                <td><strong>{{ $f->nama_fasilitas }}</strong></td>
+                <td>{{ $f->tipe }}</td>
+                <td>{{ $f->lokasi }}</td>
+                <td>
+                    @if($f->status === 'aktif')
+                        <span class="badge aktif">Aktif</span>
+                    @elseif($f->status === 'dalam_perbaikan')
+                        <span class="badge perbaikan">Dalam Perbaikan</span>
+                    @else
+                        <span class="badge nonaktif">Nonaktif</span>
+                    @endif
+                </td>
+                <td class="num">{{ $f->reservations_count }}</td>
+                <td class="num">{{ $f->reports_count }}</td>
+            </tr>
             @empty
-                <tr>
-                    <td colspan="7">Belum ada data fasilitas tercatat.</td>
-                </tr>
+            <tr><td colspan="7" style="text-align:center;padding:16px;color:#888;">Belum ada data fasilitas tercatat.</td></tr>
             @endforelse
         </tbody>
         @if ($facilities->isNotEmpty())
-            <tfoot>
-                <tr>
-                    <td colspan="5">Total</td>
-                    <td class="num">{{ $facilities->sum('reservations_count') }}</td>
-                    <td class="num">{{ $facilities->sum('reports_count') }}</td>
-                </tr>
-            </tfoot>
+        <tfoot>
+            <tr>
+                <td colspan="5">Total</td>
+                <td class="num">{{ $facilities->sum('reservations_count') }}</td>
+                <td class="num">{{ $facilities->sum('reports_count') }}</td>
+            </tr>
+        </tfoot>
         @endif
     </table>
 </body>
