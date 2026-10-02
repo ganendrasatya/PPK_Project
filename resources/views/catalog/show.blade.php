@@ -197,7 +197,7 @@
 
                                 <div class="mb-4">
                                     <label class="block font-semibold text-sm text-gray-700 mb-1">Keperluan</label>
-                                    <textarea name="purpose" rows="3" required class="w-full border border-gray-300 rounded-lg px-3 py-2 shadow-sm focus:ring-teal-500 focus:border-teal-500 text-sm" placeholder="Contoh: Latihan basket tim fakultas">{{ old('purpose') }}</textarea>
+                                    <textarea name="purpose" rows="3" required maxlength="500"class="w-full border border-gray-300 rounded-lg px-3 py-2 shadow-sm focus:ring-teal-500 focus:border-teal-500 text-sm" placeholder="Contoh: Latihan basket tim fakultas">{{ old('purpose') }}</textarea>
                                     @error('purpose') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                                 </div>
 

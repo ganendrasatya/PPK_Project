@@ -9,6 +9,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -134,6 +135,25 @@ class UserPortalTest extends TestCase
             'purpose' => 'Latihan rutin UKM Basket',
             'status' => 'pending',
         ]);
+    }
+
+    public function test_reservation_purpose_accepts_up_to_500_characters(): void
+    {
+        Storage::fake('local');
+        $purpose = str_repeat('a', 500);
+
+        $this->actingAs($this->user)->post('/reservations', [
+            'facility_id' => $this->facility->id,
+            'date' => Carbon::tomorrow()->format('Y-m-d'),
+            'start_time' => '09:00',
+            'end_time' => '10:00',
+            'purpose' => $purpose,
+            'proposal_kegiatan' => UploadedFile::fake()->create('kegiatan.pdf', 100, 'application/pdf'),
+            'proposal_permohonan' => UploadedFile::fake()->create('permohonan.pdf', 100, 'application/pdf'),
+        ])->assertSessionHas('success');
+
+        $this->assertSame($purpose, Reservation::latest('id')->first()->purpose);
+        $this->assertSame('text', Schema::getColumnType('reservations', 'purpose'));
     }
 
     public function test_reservation_documents_are_private(): void
