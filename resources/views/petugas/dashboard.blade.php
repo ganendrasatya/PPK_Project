@@ -197,7 +197,7 @@
                             <p class="text-gray-400 text-xs uppercase font-semibold mb-2">Berkas Terlampir</p>
                             <div class="space-y-2">
                                 @if ($reservation->proposal_kegiatan_path)
-                                    <a href="{{ Storage::url($reservation->proposal_kegiatan_path) }}" target="_blank"
+                                    <a href="{{ route('reservations.document', [$reservation, 'kegiatan']) }}" target="_blank"
                                        class="flex items-center gap-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors">
                                         <svg class="w-5 h-5 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6 15h1.5m-9-1.5h6" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-6-6H6a2.25 2.25 0 00-2.25 2.25v15A2.25 2.25 0 006 21h12a2.25 2.25 0 002.25-2.25V8.25z" /></svg>
                                         <span class="flex-1 truncate">Proposal Kegiatan</span>
@@ -205,7 +205,7 @@
                                     </a>
                                 @endif
                                 @if ($reservation->proposal_permohonan_path)
-                                    <a href="{{ Storage::url($reservation->proposal_permohonan_path) }}" target="_blank"
+                                    <a href="{{ route('reservations.document', [$reservation, 'permohonan']) }}" target="_blank"
                                        class="flex items-center gap-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors">
                                         <svg class="w-5 h-5 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6 15h1.5m-9-1.5h6" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-6-6H6a2.25 2.25 0 00-2.25 2.25v15A2.25 2.25 0 006 21h12a2.25 2.25 0 002.25-2.25V8.25z" /></svg>
                                         <span class="flex-1 truncate">Surat Permohonan Peminjaman</span>
@@ -374,7 +374,7 @@
                                         @csrf
                                         @method('PATCH')
                                         <input type="hidden" name="status" value="dalam_perbaikan">
-                                        <button type="submit" onclick="return confirm('Tandai fasilitas {{ $fac->nama_fasilitas }} sebagai Dalam Perbaikan? Pengguna tidak akan dapat meminjam fasilitas ini sementara waktu.')"
+                                        <button type="submit" onclick="return confirm({{ Js::from('Tandai fasilitas ' . $fac->nama_fasilitas . ' sebagai Dalam Perbaikan? Pengguna tidak akan dapat meminjam fasilitas ini sementara waktu, dan semua reservasi mendatang (menunggu/disetujui) akan dibatalkan otomatis.') }})"
                                             class="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
                                             <svg class="w-3.5 h-3.5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.162 1.15-.1 1.667.18 1.107.597 1.517 1.968.92 3.076a2.25 2.25 0 01-1.01 1.01" /></svg>
                                             Tandai Perbaikan
@@ -385,7 +385,7 @@
                                         @csrf
                                         @method('PATCH')
                                         <input type="hidden" name="status" value="aktif">
-                                        <button type="submit" onclick="return confirm('Kembalikan status fasilitas {{ $fac->nama_fasilitas }} menjadi Aktif? Fasilitas akan siap direservasi kembali.')"
+                                        <button type="submit" onclick="return confirm({{ Js::from('Kembalikan status fasilitas ' . $fac->nama_fasilitas . ' menjadi Aktif? Fasilitas akan siap direservasi kembali.') }})"
                                             class="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
                                             <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
                                             Aktifkan Kembali

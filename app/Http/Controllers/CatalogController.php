@@ -14,7 +14,7 @@ class CatalogController extends Controller
         $search = $request->input('search');
         $selectedType = $request->input('type');
         $minCapacity = $request->input('min_capacity');
-        $date = $request->input('date', Carbon::today()->format('Y-m-d'));
+        $date = $this->resolveDate($request->input('date'));
 
         $query = Facility::where('status', 'aktif');
 
@@ -55,7 +55,8 @@ class CatalogController extends Controller
             abort(404);
         }
 
-        $date = $request->input('date', Carbon::today()->format('Y-m-d'));
+        // Setelah form reservasi gagal validasi, tampilkan lagi tanggal yang tadi dipilih
+        $date = $this->resolveDate($request->input('date', $request->old('date')));
         $slots = $this->generateSlots($facility, $date);
 
         return view('catalog.show', compact('facility', 'slots', 'date'));
@@ -67,16 +68,41 @@ class CatalogController extends Controller
             return response()->json(['error' => 'Facility not active'], 400);
         }
 
-        $date = $request->input('date', Carbon::today()->format('Y-m-d'));
+        $date = $this->resolveDate($request->input('date'));
         $slots = $this->generateSlots($facility, $date);
 
         return response()->json($slots);
     }
 
+    // Tanggal yang tidak valid atau sudah lewat dikembalikan ke hari ini (WIB)
+    private function resolveDate(mixed $input): string
+    {
+        $today = Carbon::today()->format('Y-m-d');
+
+        if (! is_string($input) || $input === '') {
+            return $today;
+        }
+
+        try {
+            $date = Carbon::createFromFormat('!Y-m-d', $input)->format('Y-m-d');
+        } catch (\Throwable) {
+            return $today;
+        }
+
+        // Tanggal yang "meluber" (mis. 2026-13-45 jadi 2027-02-14) dianggap tidak valid
+        if ($date !== $input) {
+            return $today;
+        }
+
+        return $date < $today ? $today : $date;
+    }
+
     private function generateSlots(Facility $facility, string $date)
     {
-        $startTime = Carbon::parse($facility->jam_buka);
-        $endTime = Carbon::parse($facility->jam_tutup);
+        $jamBuka = is_string($facility->jam_buka) ? $facility->jam_buka : $facility->jam_buka->format('H:i');
+        $jamTutup = is_string($facility->jam_tutup) ? $facility->jam_tutup : $facility->jam_tutup->format('H:i');
+        $startTime = Carbon::parse($jamBuka);
+        $endTime = Carbon::parse($jamTutup);
         $slots = [];
 
         // Fetch reservations for this date
@@ -99,13 +125,26 @@ class CatalogController extends Controller
             $slotStartDatetime = Carbon::parse($date . ' ' . $slotStart->format('H:i:s'));
             $slotEndDatetime = Carbon::parse($date . ' ' . $slotEnd->format('H:i:s'));
 
-            $isOverlapping = $reservations->contains(fn ($r) => $slotStartDatetime < $r->end_time && $slotEndDatetime > $r->start_time);
-            $available = ! $isOverlapping && $slotStartDatetime >= Carbon::now();
+            $state = 'available';
+
+            foreach ($reservations as $reservation) {
+                // overlap condition: start < r_end AND end > r_start
+                if ($slotStartDatetime < $reservation->end_time && $slotEndDatetime > $reservation->start_time) {
+                    $state = 'booked';
+                    break;
+                }
+            }
+
+            // Slot yang jam mulainya sudah lewat (waktu Jakarta) tidak bisa dipilih
+            if ($slotStartDatetime <= Carbon::now()) {
+                $state = 'past';
+            }
 
             $slots[] = [
                 'time' => $slotStart->format('H:i'),
                 'end_time' => $slotEnd->format('H:i'),
-                'available' => $available,
+                'available' => $state === 'available',
+                'state' => $state,
             ];
 
             $currentTime->addMinutes(30);

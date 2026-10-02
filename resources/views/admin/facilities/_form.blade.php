@@ -39,6 +39,7 @@
                 :options="['aktif' => 'Aktif', 'nonaktif' => 'Nonaktif', 'dalam_perbaikan' => 'Dalam Perbaikan']"
                 :selected="old('status', $facility?->status ?? 'aktif')" />
         </div>
+        <p class="text-xs text-gray-400 mt-1">Mengubah ke Nonaktif / Dalam Perbaikan akan membatalkan otomatis reservasi mendatang di fasilitas ini.</p>
         <x-input-error :messages="$errors->get('status')" class="mt-2" />
     </div>
 </div>

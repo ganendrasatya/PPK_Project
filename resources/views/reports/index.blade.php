@@ -105,26 +105,49 @@
                         @error('description') <p class="text-red-500 text-xs mt-1 font-medium">{{ $message }}</p> @enderror
                     </div>
 
-                    <div class="mb-5" x-data="{ fileName: '', filePreview: null, dragging: false }">
+                    {{-- Input file harus selalu ada di DOM (bukan di dalam x-if), kalau tidak file tidak ikut terkirim --}}
+                    <div class="mb-5" x-data="{
+                            fileName: '',
+                            filePreview: null,
+                            dragging: false,
+                            fileError: null,
+                            pick(files) {
+                                const file = files[0];
+                                this.fileError = null;
+                                if (!file) return;
+                                if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+                                    return this.reject('Format foto harus JPG, PNG, atau WebP.');
+                                }
+                                if (file.size > 5 * 1024 * 1024) {
+                                    return this.reject('File hanya bisa max 5MB');
+                                }
+                                this.$refs.photo.files = files;
+                                this.fileName = file.name;
+                                const reader = new FileReader();
+                                reader.onload = (e) => this.filePreview = e.target.result;
+                                reader.readAsDataURL(file);
+                            },
+                            reject(message) {
+                                this.fileError = message;
+                                this.clear();
+                            },
+                            clear() {
+                                this.filePreview = null;
+                                this.fileName = '';
+                                this.$refs.photo.value = '';
+                            },
+                         }">
                         <label class="block font-semibold text-sm text-gray-700 mb-1">Foto Bukti Kerusakan (Opsional)</label>
+
+                        <input id="photo-upload" x-ref="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp" class="sr-only"
+                               @change="pick($event.target.files)">
 
                         <div class="mt-1 flex justify-center px-6 pt-6 pb-6 border-2 border-dashed rounded-xl relative transition-colors"
                              :class="dragging || filePreview ? 'border-teal-500 bg-teal-50' : 'border-gray-300 bg-gray-50/50 hover:bg-gray-50'"
                              @dragover.prevent="dragging = true" @dragleave.prevent="dragging = false"
-                             @drop.prevent="
-                                dragging = false;
-                                const file = $event.dataTransfer.files[0];
-                                if (file) {
-                                    document.getElementById('photo-upload').files = $event.dataTransfer.files;
-                                    fileName = file.name;
-                                    const reader = new FileReader();
-                                    reader.onload = (e) => filePreview = e.target.result;
-                                    reader.readAsDataURL(file);
-                                }
-                             ">
+                             @drop.prevent="dragging = false; pick($event.dataTransfer.files)">
 
-                            <template x-if="!filePreview">
-                                <div class="space-y-2 text-center">
+                            <div x-show="!filePreview" class="space-y-2 text-center">
                                     <span class="mx-auto flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-sm ring-1 ring-gray-200">
                                         <svg class="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.174C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" /><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" /></svg>
                                     </span>
@@ -132,30 +155,18 @@
                                         <span class="font-medium">Tarik &amp; Lepaskan foto atau</span>
                                         <label for="photo-upload" class="cursor-pointer font-semibold text-teal-600 hover:text-teal-700">Pilih File</label>
                                     </div>
-                                    <input id="photo-upload" name="photo" type="file" accept="image/jpeg,image/png,image/webp" class="sr-only"
-                                           @change="
-                                                const file = $event.target.files[0];
-                                                if(file) {
-                                                    fileName = file.name;
-                                                    const reader = new FileReader();
-                                                    reader.onload = (e) => filePreview = e.target.result;
-                                                    reader.readAsDataURL(file);
-                                                }
-                                           ">
                                     <p class="text-xs text-gray-400">Format JPG, PNG atau WebP (Maks. 5MB)</p>
-                                </div>
-                            </template>
+                            </div>
 
-                            <template x-if="filePreview">
-                                <div class="w-full text-center">
-                                    <img :src="filePreview" class="h-32 mx-auto object-cover rounded-lg shadow-sm mb-2">
-                                    <div class="text-xs font-medium text-gray-600 truncate px-4" x-text="fileName"></div>
-                                    <button type="button" @click="filePreview = null; fileName = ''; document.getElementById('photo-upload').value = ''" class="mt-2 text-xs font-semibold text-red-600 hover:text-red-800">
-                                        Hapus Foto
-                                    </button>
-                                </div>
-                            </template>
+                            <div x-show="filePreview" class="w-full text-center" style="display: none;">
+                                <img :src="filePreview" class="h-32 mx-auto object-cover rounded-lg shadow-sm mb-2">
+                                <div class="text-xs font-medium text-gray-600 truncate px-4" x-text="fileName"></div>
+                                <button type="button" @click="clear()" class="mt-2 text-xs font-semibold text-red-600 hover:text-red-800">
+                                    Hapus Foto
+                                </button>
+                            </div>
                         </div>
+                        <p x-show="fileError" x-text="fileError" class="text-red-500 text-xs mt-1 font-semibold" style="display: none;"></p>
                         @error('photo') <p class="text-red-500 text-xs mt-1 font-medium">{{ $message }}</p> @enderror
                     </div>
 
@@ -328,7 +339,7 @@
                                                     @csrf
                                                     @method('PATCH')
                                                     <input type="hidden" name="status" value="dalam_perbaikan">
-                                                    <button type="submit" onclick="return confirm('Tandai fasilitas {{ $mReport->facility->nama_fasilitas }} sebagai Dalam Perbaikan? Pengguna tidak dapat mereservasi fasilitas ini sementara waktu.')"
+                                                    <button type="submit" onclick="return confirm({{ Js::from('Tandai fasilitas ' . $mReport->facility->nama_fasilitas . ' sebagai Dalam Perbaikan? Pengguna tidak dapat mereservasi fasilitas ini sementara waktu, dan semua reservasi mendatang (menunggu/disetujui) akan dibatalkan otomatis.') }})"
                                                         class="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-semibold px-2 py-0.5 rounded transition-colors flex items-center gap-1 text-[11px]">
                                                         <svg class="w-3 h-3 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.162 1.15-.1 1.667.18 1.107.597 1.517 1.968.92 3.076a2.25 2.25 0 01-1.01 1.01" /></svg>
                                                         Tandai Dalam Perbaikan
@@ -342,7 +353,7 @@
                                                     @csrf
                                                     @method('PATCH')
                                                     <input type="hidden" name="status" value="aktif">
-                                                    <button type="submit" onclick="return confirm('Kembalikan status fasilitas {{ $mReport->facility->nama_fasilitas }} menjadi Aktif? Fasilitas akan siap direservasi kembali.')"
+                                                    <button type="submit" onclick="return confirm({{ Js::from('Kembalikan status fasilitas ' . $mReport->facility->nama_fasilitas . ' menjadi Aktif? Fasilitas akan siap direservasi kembali.') }})"
                                                         class="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-semibold px-2 py-0.5 rounded transition-colors flex items-center gap-1 text-[11px]">
                                                         <svg class="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
                                                         Kembalikan ke Aktif

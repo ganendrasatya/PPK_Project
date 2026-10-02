@@ -4,16 +4,24 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreReservationRequest;
 use App\Models\Facility;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use App\Models\Reservation;
+use App\Notifications\ReservationApprovedNotification;
+use App\Notifications\ReservationCancelledNotification;
+use App\Notifications\ReservationRejectedNotification;
+use App\Notifications\ReservationSubmittedNotification;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class ReservationController extends Controller
 {
     public function index(Request $request)
     {
+        Reservation::expireStalePending();
+
         $status = $request->input('status');
         $search = $request->input('search');
         $user = Auth::user();
@@ -25,8 +33,11 @@ class ReservationController extends Controller
         }
 
         if ($search) {
-            $query->where(function($q) use ($search) {
-                $q->where('id', $search)
+            // ID ditampilkan sebagai "#RSV-00012"; terima juga "RSV-00012", "rsv12", "00012", atau "12"
+            $searchId = preg_match('/^#?\s*(?:rsv)?[-\s]*0*(\d+)$/i', trim($search), $m) ? (int) $m[1] : null;
+
+            $query->where(function($q) use ($search, $searchId) {
+                $q->when($searchId, fn ($qId) => $qId->where('id', $searchId))
                   ->orWhereHas('facility', function($qF) use ($search) {
                       $qF->where('nama_fasilitas', 'like', "%{$search}%");
                   });
@@ -77,8 +88,9 @@ class ReservationController extends Controller
                 'user_id' => Auth::id(),
                 'facility_id' => $validated['facility_id'],
                 'purpose' => $validated['purpose'],
-                'proposal_kegiatan_path' => $request->file('proposal_kegiatan')->store('proposals', 'public'),
-                'proposal_permohonan_path' => $request->file('proposal_permohonan')->store('proposals', 'public'),
+                // Disk privat: dokumen hanya bisa dibuka lewat route document()
+                'proposal_kegiatan_path' => $request->file('proposal_kegiatan')->store('proposals', 'local'),
+                'proposal_permohonan_path' => $request->file('proposal_permohonan')->store('proposals', 'local'),
                 'start_time' => $startTime,
                 'end_time' => $endTime,
                 'status' => 'pending',
@@ -89,7 +101,52 @@ class ReservationController extends Controller
             return back()->withInput()->with('error', 'Waktu yang dipilih sudah dibooking atau dalam proses persetujuan.');
         }
 
+        $request->user()->notifySafely(new ReservationSubmittedNotification($reservation));
+
         return back()->with('success', 'Reservasi berhasil dibuat. Menunggu persetujuan admin.');
+    }
+
+    public function document(Reservation $reservation, string $type)
+    {
+        $user = Auth::user();
+        if ($reservation->user_id !== $user->id && ! $user->isAdmin() && ! $user->isPetugas()) {
+            abort(403);
+        }
+
+        $path = match ($type) {
+            'kegiatan' => $reservation->proposal_kegiatan_path,
+            'permohonan' => $reservation->proposal_permohonan_path,
+            default => null,
+        };
+
+        if (! $path || ! Storage::disk('local')->exists($path)) {
+            abort(404);
+        }
+
+        $filename = "RSV-" . str_pad($reservation->id, 5, '0', STR_PAD_LEFT) . "-{$type}.pdf";
+
+        return Storage::disk('local')->response($path, $filename, [
+            'Content-Type' => 'application/pdf',
+        ]);
+    }
+
+    public function proof(Reservation $reservation)
+    {
+        $user = Auth::user();
+        if ($reservation->user_id !== $user->id && ! $user->isAdmin() && ! $user->isPetugas()) {
+            abort(403);
+        }
+
+        if ($reservation->status !== 'approved') {
+            return back()->with('error', 'Bukti persetujuan hanya tersedia untuk reservasi yang sudah disetujui.');
+        }
+
+        $reservation->load(['facility', 'user']);
+        $code = 'RSV-' . str_pad($reservation->id, 5, '0', STR_PAD_LEFT);
+
+        return Pdf::loadView('reservations.proof-pdf', compact('reservation', 'code'))
+            ->setPaper('a4')
+            ->download("bukti-persetujuan-{$code}.pdf");
     }
 
     public function cancel(Reservation $reservation)
@@ -114,13 +171,17 @@ class ReservationController extends Controller
         public function approve(Reservation $reservation)
     {
         $result = DB::transaction(function () use ($reservation) {
-            Facility::whereKey($reservation->facility_id)->lockForUpdate()->firstOrFail();
+            $facility = Facility::whereKey($reservation->facility_id)->lockForUpdate()->firstOrFail();
             $reservation->refresh();
 
             if ($reservation->status !== 'pending') {
                 return 'processed';
             }
-            if ($reservation->end_time->isPast()) {
+            if ($facility->status !== 'aktif') {
+                return 'inactive';
+            }
+            if ($reservation->start_time->isPast()) {
+                $reservation->update(['status' => 'rejected', 'cancel_reason' => Reservation::EXPIRED_REASON]);
                 return 'expired';
             }
 
@@ -139,9 +200,14 @@ class ReservationController extends Controller
             return 'ok';
         });
 
+        if ($result === 'ok') {
+            $reservation->user?->notifySafely(new ReservationApprovedNotification($reservation));
+        }
+
         return match ($result) {
             'processed' => back()->with('error', 'Reservasi ini sudah diproses sebelumnya.'),
-            'expired'   => back()->with('error', 'Waktu reservasi sudah lewat dan tidak dapat disetujui.'),
+            'expired'   => back()->with('error', 'Waktu mulai reservasi sudah lewat sehingga tidak dapat disetujui; reservasi ditandai kedaluwarsa.'),
+            'inactive'  => back()->with('error', 'Tidak dapat menyetujui: fasilitas sedang nonaktif atau dalam perbaikan.'),
             'conflict'  => back()->with('error', 'Tidak dapat menyetujui: jadwal bentrok dengan reservasi lain yang sudah disetujui.'),
             default     => back()->with('success', "Reservasi #{$reservation->id} berhasil disetujui."),
         };
@@ -161,6 +227,8 @@ class ReservationController extends Controller
             'status' => 'rejected',
             'cancel_reason' => $validated['reason'],
         ]);
+
+        $reservation->user?->notifySafely(new ReservationRejectedNotification($reservation));
 
         return back()->with('success', "Reservasi #{$reservation->id} ditolak.");
     }
@@ -186,6 +254,8 @@ class ReservationController extends Controller
             'status' => 'cancelled',
             'cancel_reason' => $validated['reason'],
         ]);
+
+        $reservation->user?->notifySafely(new ReservationCancelledNotification($reservation));
 
         return back()->with('success', "Reservasi #{$reservation->id} berhasil dibatalkan oleh petugas.");
     }

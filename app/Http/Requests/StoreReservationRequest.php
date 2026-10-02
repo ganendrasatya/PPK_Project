@@ -49,7 +49,7 @@ class StoreReservationRequest extends FormRequest
             if ($start->minute % 30 !== 0 || $end->minute % 30 !== 0) {
                 $validator->errors()->add('start_time', 'Waktu harus berkelipatan 30 menit.');
             }
-            if ($start->lt(now())) {
+            if ($start->lte(now())) {
                 $validator->errors()->add('start_time', 'Waktu mulai sudah lewat.');
             }
         }];
@@ -74,14 +74,14 @@ class StoreReservationRequest extends FormRequest
             'proposal_kegiatan.required' => 'Proposal kegiatan harus diunggah.',
             'proposal_kegiatan.file' => 'Proposal kegiatan harus berupa file.',
             'proposal_kegiatan.mimes' => 'Proposal kegiatan harus berformat PDF.',
-            'proposal_kegiatan.max' => 'Ukuran proposal kegiatan maksimal 5MB.',
+            'proposal_kegiatan.max' => 'File hanya bisa max 5MB',
             'proposal_permohonan.required' => 'Surat permohonan harus diunggah.',
             'proposal_permohonan.file' => 'Surat permohonan harus berupa file.',
             'proposal_permohonan.mimes' => 'Surat permohonan harus berformat PDF.',
-            'proposal_permohonan.max' => 'Ukuran surat permohonan maksimal 5MB.',
+            'proposal_permohonan.max' => 'File hanya bisa max 5MB',
             'date.date_format' => 'Format tanggal tidak valid (YYYY-MM-DD).',
-            'proposal_kegiatan.uploaded' => 'Proposal kegiatan gagal diunggah. Periksa ukuran file.',
-            'proposal_permohonan.uploaded' => 'Surat permohonan gagal diunggah. Periksa ukuran file.',
+            'proposal_kegiatan.uploaded' => 'File hanya bisa max 5MB',
+            'proposal_permohonan.uploaded' => 'File hanya bisa max 5MB',
         ];
     }
 }

@@ -45,12 +45,6 @@
             {{ session('status') }}
         </div>
     @endif
-    @if (session('error'))
-        <div class="mb-4 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700 border border-rose-200">
-            {{ session('error') }}
-        </div>
-    @endif
-
     {{-- Filter & Search --}}
     <form method="GET" class="mb-6 flex flex-wrap gap-3 items-end bg-white rounded-xl border border-gray-200 shadow-sm p-4">
         <div class="flex-1 min-w-[200px]">

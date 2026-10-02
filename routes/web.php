@@ -32,6 +32,10 @@ Route::middleware(['auth', 'account.verified'])->group(function () {
     Route::get('/reservations', [ReservationController::class, 'index'])->name('reservations.index');
     Route::post('/reservations', [ReservationController::class, 'store'])->name('reservations.store');
     Route::post('/reservations/{reservation}/cancel', [ReservationController::class, 'cancel'])->name('reservations.cancel');
+    Route::get('/reservations/{reservation}/documents/{type}', [ReservationController::class, 'document'])
+        ->whereIn('type', ['kegiatan', 'permohonan'])
+        ->name('reservations.document');
+    Route::get('/reservations/{reservation}/proof', [ReservationController::class, 'proof'])->name('reservations.proof');
     
     Route::get('/reports', [DamageReportController::class, 'index'])->name('reports.index');
     Route::post('/reports', [DamageReportController::class, 'store'])->name('reports.store');

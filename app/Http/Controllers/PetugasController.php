@@ -12,6 +12,8 @@ class PetugasController extends Controller
 {
     public function dashboard(Request $request): View
     {
+        Reservation::expireStalePending();
+
         $tab = $request->input('tab', 'pending');
 
         $query = Reservation::with(['facility', 'user']);

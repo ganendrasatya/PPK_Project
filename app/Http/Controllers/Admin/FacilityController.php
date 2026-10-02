@@ -66,7 +66,12 @@ class FacilityController extends Controller
 
         $facility->update($data);
 
-        return redirect()->route('admin.facilities.index')->with('status', 'Fasilitas berhasil diperbarui.');
+        $message = 'Fasilitas berhasil diperbarui.';
+        if ($facility->wasChanged('status') && ($cancelled = $facility->cancelUpcomingReservations()) > 0) {
+            $message .= " {$cancelled} reservasi mendatang dibatalkan otomatis.";
+        }
+
+        return redirect()->route('admin.facilities.index')->with('status', $message);
     }
 
     public function destroy(Facility $facility): RedirectResponse
@@ -90,9 +95,12 @@ class FacilityController extends Controller
             'status' => ['required', 'in:aktif,nonaktif,dalam_perbaikan'],
         ]);
 
-        $facility->update(['status' => $request->string('status')]);
+        $facility->update(['status' => $request->input('status')]);
 
-        $message = "Status fasilitas {$facility->nama_fasilitas} berhasil diperbarui menjadi " . ($request->string('status') === 'dalam_perbaikan' ? 'Dalam Perbaikan' : ucfirst($request->string('status'))) . '.';
+        $message = "Status fasilitas {$facility->nama_fasilitas} berhasil diperbarui menjadi {$facility->status_label}.";
+        if ($facility->wasChanged('status') && ($cancelled = $facility->cancelUpcomingReservations()) > 0) {
+            $message .= " {$cancelled} reservasi mendatang dibatalkan otomatis.";
+        }
 
         return back()->with('status', $message)->with('success', $message);
     }

@@ -9,6 +9,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -57,6 +58,37 @@ class UserPortalTest extends TestCase
         $response->assertSee('07.00–18.00 WIB');
     }
 
+    public function test_catalog_falls_back_to_today_for_invalid_or_past_date(): void
+    {
+        $today = Carbon::today()->format('Y-m-d');
+
+        foreach (['abc', '2026-13-45', '2020-01-01'] as $date) {
+            $response = $this->actingAs($this->user)->get('/?date=' . $date);
+            $response->assertStatus(200);
+            $response->assertViewHas('date', $today);
+        }
+    }
+
+    public function test_failed_reservation_keeps_selected_date(): void
+    {
+        $chosenDate = Carbon::today()->addDays(3)->format('Y-m-d');
+
+        // Tanpa dokumen proposal -> gagal validasi dan kembali ke halaman fasilitas
+        $response = $this->actingAs($this->user)
+            ->from('/facilities/' . $this->facility->id)
+            ->followingRedirects()
+            ->post('/reservations', [
+                'facility_id' => $this->facility->id,
+                'date' => $chosenDate,
+                'start_time' => '09:00',
+                'end_time' => '10:00',
+                'purpose' => 'Rapat himpunan',
+            ]);
+
+        $response->assertStatus(200);
+        $response->assertViewHas('date', $chosenDate);
+    }
+
     public function test_user_can_view_facility_detail_and_slots(): void
     {
         $response = $this->actingAs($this->user)->get('/facilities/' . $this->facility->id);
@@ -80,6 +112,7 @@ class UserPortalTest extends TestCase
     public function test_user_can_create_reservation_with_required_documents(): void
     {
         Storage::fake('public');
+        Storage::fake('local');
 
         $tomorrow = Carbon::tomorrow()->format('Y-m-d');
         $kegiatan = UploadedFile::fake()->create('proposal_kegiatan.pdf', 100, 'application/pdf');
@@ -102,6 +135,241 @@ class UserPortalTest extends TestCase
             'purpose' => 'Latihan rutin UKM Basket',
             'status' => 'pending',
         ]);
+    }
+
+    public function test_reservation_purpose_accepts_up_to_500_characters(): void
+    {
+        Storage::fake('local');
+        $purpose = str_repeat('a', 500);
+
+        $this->actingAs($this->user)->post('/reservations', [
+            'facility_id' => $this->facility->id,
+            'date' => Carbon::tomorrow()->format('Y-m-d'),
+            'start_time' => '09:00',
+            'end_time' => '10:00',
+            'purpose' => $purpose,
+            'proposal_kegiatan' => UploadedFile::fake()->create('kegiatan.pdf', 100, 'application/pdf'),
+            'proposal_permohonan' => UploadedFile::fake()->create('permohonan.pdf', 100, 'application/pdf'),
+        ])->assertSessionHas('success');
+
+        $this->assertSame($purpose, Reservation::latest('id')->first()->purpose);
+        $this->assertSame('text', Schema::getColumnType('reservations', 'purpose'));
+    }
+
+    public function test_reservation_documents_are_private(): void
+    {
+        Storage::fake('public');
+        Storage::fake('local');
+
+        $this->actingAs($this->user)->post('/reservations', [
+            'facility_id' => $this->facility->id,
+            'date' => Carbon::tomorrow()->format('Y-m-d'),
+            'start_time' => '09:00',
+            'end_time' => '10:00',
+            'purpose' => 'Latihan rutin UKM Basket',
+            'proposal_kegiatan' => UploadedFile::fake()->create('kegiatan.pdf', 100, 'application/pdf'),
+            'proposal_permohonan' => UploadedFile::fake()->create('permohonan.pdf', 100, 'application/pdf'),
+        ])->assertSessionHas('success');
+
+        $reservation = Reservation::latest('id')->first();
+
+        // Tidak tersimpan di disk public
+        Storage::disk('local')->assertExists($reservation->proposal_kegiatan_path);
+        Storage::disk('public')->assertMissing($reservation->proposal_kegiatan_path);
+
+        $url = "/reservations/{$reservation->id}/documents/kegiatan";
+
+        // Pemilik, petugas, dan admin boleh membuka
+        $this->actingAs($this->user)->get($url)->assertOk();
+        $this->actingAs(User::factory()->petugas()->create())->get($url)->assertOk();
+        $this->actingAs($this->admin)->get($url)->assertOk();
+
+        // Pengguna lain ditolak
+        $other = User::factory()->create(['role' => 'pengguna', 'status' => 'verified']);
+        $this->actingAs($other)->get($url)->assertForbidden();
+
+        // Tamu diarahkan ke login
+        auth()->logout();
+        $this->get($url)->assertRedirect('/login');
+    }
+
+    public function test_petugas_cannot_approve_reservation_for_inactive_facility(): void
+    {
+        $petugas = User::factory()->petugas()->create();
+        $reservation = Reservation::create([
+            'user_id' => $this->user->id,
+            'facility_id' => $this->facility->id,
+            'purpose' => 'Latihan',
+            'start_time' => Carbon::tomorrow()->setTime(9, 0),
+            'end_time' => Carbon::tomorrow()->setTime(10, 0),
+            'status' => 'pending',
+        ]);
+
+        $this->facility->update(['status' => 'dalam_perbaikan']);
+
+        $this->actingAs($petugas)->post("/reservations/{$reservation->id}/approve")
+            ->assertSessionHas('error');
+        $this->assertDatabaseHas('reservations', ['id' => $reservation->id, 'status' => 'pending']);
+    }
+
+    public function test_deactivating_facility_cancels_upcoming_reservations(): void
+    {
+        $petugas = User::factory()->petugas()->create();
+        $make = fn (string $status, Carbon $start) => Reservation::create([
+            'user_id' => $this->user->id,
+            'facility_id' => $this->facility->id,
+            'purpose' => 'Kegiatan',
+            'start_time' => $start,
+            'end_time' => $start->copy()->addHour(),
+            'status' => $status,
+        ]);
+
+        $pending = $make('pending', Carbon::tomorrow()->setTime(9, 0));
+        $approved = $make('approved', Carbon::tomorrow()->setTime(13, 0));
+        $past = $make('approved', Carbon::now()->subDays(2)->setTime(9, 0));
+        $rejected = $make('rejected', Carbon::tomorrow()->setTime(15, 0));
+
+        $this->actingAs($petugas)->patch("/facilities/{$this->facility->id}/status", ['status' => 'dalam_perbaikan'])
+            ->assertSessionHas('success', fn ($msg) => str_contains($msg, '2 reservasi mendatang dibatalkan otomatis'));
+
+        foreach ([$pending, $approved] as $r) {
+            $this->assertDatabaseHas('reservations', [
+                'id' => $r->id,
+                'status' => 'cancelled',
+                'cancel_reason' => 'Dibatalkan otomatis: fasilitas sedang dalam perbaikan.',
+            ]);
+        }
+        // Riwayat yang sudah lewat & yang sudah ditolak tidak diubah
+        $this->assertDatabaseHas('reservations', ['id' => $past->id, 'status' => 'approved']);
+        $this->assertDatabaseHas('reservations', ['id' => $rejected->id, 'status' => 'rejected']);
+    }
+
+    public function test_admin_edit_facility_to_nonaktif_cancels_upcoming_reservations(): void
+    {
+        $reservation = Reservation::create([
+            'user_id' => $this->user->id,
+            'facility_id' => $this->facility->id,
+            'purpose' => 'Kegiatan',
+            'start_time' => Carbon::tomorrow()->setTime(9, 0),
+            'end_time' => Carbon::tomorrow()->setTime(10, 0),
+            'status' => 'approved',
+        ]);
+
+        $this->actingAs($this->admin)->put("/admin/facilities/{$this->facility->id}", [
+            'nama_fasilitas' => $this->facility->nama_fasilitas,
+            'tipe' => $this->facility->tipe,
+            'lokasi' => $this->facility->lokasi,
+            'kapasitas' => $this->facility->kapasitas,
+            'status' => 'nonaktif',
+            'jam_buka' => '07:00',
+            'jam_tutup' => '18:00',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('reservations', [
+            'id' => $reservation->id,
+            'status' => 'cancelled',
+            'cancel_reason' => 'Dibatalkan otomatis: fasilitas sedang nonaktif.',
+        ]);
+    }
+
+    public function test_user_can_download_approval_proof(): void
+    {
+        $reservation = Reservation::create([
+            'user_id' => $this->user->id,
+            'facility_id' => $this->facility->id,
+            'purpose' => 'Seminar',
+            'start_time' => Carbon::tomorrow()->setTime(9, 0),
+            'end_time' => Carbon::tomorrow()->setTime(10, 0),
+            'status' => 'approved',
+        ]);
+        $code = 'RSV-' . str_pad($reservation->id, 5, '0', STR_PAD_LEFT);
+
+        $response = $this->actingAs($this->user)->get("/reservations/{$reservation->id}/proof");
+        $response->assertOk()->assertDownload("bukti-persetujuan-{$code}.pdf");
+        $this->assertStringStartsWith('%PDF', $response->getContent());
+
+        // Halaman Reservasi Saya menautkan ke bukti ini
+        $this->actingAs($this->user)->get('/reservations')
+            ->assertSee(route('reservations.proof', $reservation), false);
+
+        // Pengguna lain tidak boleh mengunduh
+        $other = User::factory()->create(['role' => 'pengguna', 'status' => 'verified']);
+        $this->actingAs($other)->get("/reservations/{$reservation->id}/proof")->assertForbidden();
+    }
+
+    public function test_approval_proof_unavailable_for_pending_reservation(): void
+    {
+        $reservation = Reservation::create([
+            'user_id' => $this->user->id,
+            'facility_id' => $this->facility->id,
+            'purpose' => 'Seminar',
+            'start_time' => Carbon::tomorrow()->setTime(9, 0),
+            'end_time' => Carbon::tomorrow()->setTime(10, 0),
+            'status' => 'pending',
+        ]);
+
+        $this->actingAs($this->user)->get("/reservations/{$reservation->id}/proof")
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
+    public function test_user_can_search_reservation_by_displayed_id(): void
+    {
+        $make = fn (string $purpose, int $day) => Reservation::create([
+            'user_id' => $this->user->id,
+            'facility_id' => $this->facility->id,
+            'purpose' => $purpose,
+            'start_time' => Carbon::now()->addDays($day)->setTime(9, 0),
+            'end_time' => Carbon::now()->addDays($day)->setTime(10, 0),
+            'status' => 'pending',
+        ]);
+        $target = $make('Kegiatan Dicari', 1);
+        $make('Kegiatan Lain', 2);
+
+        $code = str_pad($target->id, 5, '0', STR_PAD_LEFT);
+        foreach (["#RSV-{$code}", "RSV-{$code}", "rsv{$target->id}", $code, (string) $target->id] as $search) {
+            $this->actingAs($this->user)->get('/reservations?search=' . urlencode($search))
+                ->assertSee('Kegiatan Dicari')
+                ->assertDontSee('Kegiatan Lain');
+        }
+
+        // Pencarian nama fasilitas tetap berfungsi
+        $this->actingAs($this->user)->get('/reservations?search=Basket')
+            ->assertSee('Kegiatan Dicari')
+            ->assertSee('Kegiatan Lain');
+    }
+
+    public function test_reactivate_facility_only_when_report_resolved(): void
+    {
+        $petugas = User::factory()->petugas()->create();
+        $makeReport = fn () => Report::create([
+            'user_id' => $this->user->id,
+            'facility_id' => $this->facility->id,
+            'title' => 'Lampu Mati',
+            'category' => 'Kelistrikan & Lampu',
+            'description' => 'Lampu tribun padam total.',
+            'status' => 'baru',
+        ]);
+
+        // Status bukan "selesai" -> fasilitas tetap dalam perbaikan
+        $this->facility->update(['status' => 'dalam_perbaikan']);
+        foreach (['diproses' => null, 'ditolak' => 'Laporan duplikat.'] as $status => $note) {
+            $this->actingAs($petugas)->patch('/reports/' . $makeReport()->id . '/status', array_filter([
+                'status' => $status,
+                'resolution_note' => $note,
+                'reactivate_facility' => 1,
+            ]))->assertSessionHas('success');
+            $this->assertSame('dalam_perbaikan', $this->facility->fresh()->status);
+        }
+
+        // Fasilitas yang sengaja dinonaktifkan admin tidak ikut aktif
+        $this->facility->update(['status' => 'nonaktif']);
+        $this->actingAs($petugas)->patch('/reports/' . $makeReport()->id . '/status', [
+            'status' => 'selesai',
+            'resolution_note' => 'Sudah diperbaiki.',
+            'reactivate_facility' => 1,
+        ])->assertSessionHas('success');
+        $this->assertSame('nonaktif', $this->facility->fresh()->status);
     }
 
     public function test_user_can_view_reservations_history(): void
