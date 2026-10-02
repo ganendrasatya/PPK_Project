@@ -68,6 +68,26 @@ class UserPortalTest extends TestCase
         }
     }
 
+    public function test_failed_reservation_keeps_selected_date(): void
+    {
+        $chosenDate = Carbon::today()->addDays(3)->format('Y-m-d');
+
+        // Tanpa dokumen proposal -> gagal validasi dan kembali ke halaman fasilitas
+        $response = $this->actingAs($this->user)
+            ->from('/facilities/' . $this->facility->id)
+            ->followingRedirects()
+            ->post('/reservations', [
+                'facility_id' => $this->facility->id,
+                'date' => $chosenDate,
+                'start_time' => '09:00',
+                'end_time' => '10:00',
+                'purpose' => 'Rapat himpunan',
+            ]);
+
+        $response->assertStatus(200);
+        $response->assertViewHas('date', $chosenDate);
+    }
+
     public function test_user_can_view_facility_detail_and_slots(): void
     {
         $response = $this->actingAs($this->user)->get('/facilities/' . $this->facility->id);

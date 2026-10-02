@@ -14,7 +14,7 @@ class CatalogController extends Controller
         $search = $request->input('search');
         $selectedType = $request->input('type');
         $minCapacity = $request->input('min_capacity');
-        $date = $this->resolveDate($request);
+        $date = $this->resolveDate($request->input('date'));
 
         $query = Facility::where('status', 'aktif');
 
@@ -55,7 +55,8 @@ class CatalogController extends Controller
             abort(404);
         }
 
-        $date = $this->resolveDate($request);
+        // Setelah form reservasi gagal validasi, tampilkan lagi tanggal yang tadi dipilih
+        $date = $this->resolveDate($request->input('date', $request->old('date')));
         $slots = $this->generateSlots($facility, $date);
 
         return view('catalog.show', compact('facility', 'slots', 'date'));
@@ -67,18 +68,20 @@ class CatalogController extends Controller
             return response()->json(['error' => 'Facility not active'], 400);
         }
 
-        $date = $this->resolveDate($request);
+        $date = $this->resolveDate($request->input('date'));
         $slots = $this->generateSlots($facility, $date);
 
         return response()->json($slots);
     }
 
     // Tanggal yang tidak valid atau sudah lewat dikembalikan ke hari ini (WIB)
-    private function resolveDate(Request $request): string
+    private function resolveDate(mixed $input): string
     {
         $today = Carbon::today()->format('Y-m-d');
 
-        $input = (string) $request->input('date', $today);
+        if (! is_string($input) || $input === '') {
+            return $today;
+        }
 
         try {
             $date = Carbon::createFromFormat('!Y-m-d', $input)->format('Y-m-d');

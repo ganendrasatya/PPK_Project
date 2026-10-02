@@ -238,8 +238,8 @@
                 slots: @json($slots ?? []),
                 showModal: {{ $errors->any() ? 'true' : 'false' }},
                 selectedSlot: null,
-                formStartTime: '{{ old('start_time') }}',
-                formEndTime: '{{ old('end_time') }}',
+                formStartTime: '',
+                formEndTime: '',
                 loading: false,
                 pastDateWarning: false,
                 unavailableNotice: null,
@@ -251,10 +251,14 @@
                     if(this.slots.length === 0) {
                         this.fetchSlots();
                     }
-                    if({{ $errors->any() ? 'true' : 'false' }} && '{{ old('start_time') }}') {
-                        this.selectedSlot = '{{ old('start_time') }}';
-                        this.formStartTime = '{{ old('start_time') }}';
-                        this.formEndTime = '{{ old('end_time') }}';
+                    // Pulihkan jam yang tadi dipilih hanya jika tanggalnya masih sama
+                    // (tanggal lampau sudah dikembalikan ke hari ini oleh server)
+                    const oldInput = @js(['date' => old('date'), 'start' => old('start_time'), 'end' => old('end_time')]);
+                    if ({{ $errors->any() ? 'true' : 'false' }} && oldInput.start && oldInput.date === this.selectedDate) {
+                        this.selectedSlot = oldInput.start;
+                        this.formStartTime = oldInput.start;
+                        this.formEndTime = oldInput.end || '';
+                        this.dropUnavailableSelection();
                     }
 
                     this.tick();
