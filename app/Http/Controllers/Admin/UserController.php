@@ -3,8 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\StorePenggunaRequest;
-use App\Http\Requests\Admin\StorePetugasRequest;
+use App\Http\Requests\Admin\StoreUserRequest;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -58,40 +57,26 @@ class UserController extends Controller
         return back()->with('status', "Akun {$user->name} ditolak.");
     }
 
-    public function createPetugas(): View
+    public function create(Request $request): View
     {
-        return view('admin.users.create-petugas');
+        $role = in_array($request->query('role'), ['petugas', 'pengguna']) ? $request->query('role') : 'pengguna';
+
+        return view('admin.users.create', compact('role'));
     }
 
-    public function storePetugas(StorePetugasRequest $request): RedirectResponse
+    public function store(StoreUserRequest $request): RedirectResponse
     {
+        $role = $request->validated('role');
+
         User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => 'petugas',
+            'role' => $role,
             'status' => 'verified',
         ]);
 
-        return redirect()->route('admin.users.index')->with('status', 'Akun petugas berhasil dibuat.');
-    }
-
-    public function createPengguna(): View
-    {
-        return view('admin.users.create-pengguna');
-    }
-
-    public function storePengguna(StorePenggunaRequest $request): RedirectResponse
-    {
-        User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => 'pengguna',
-            'status' => 'verified',
-        ]);
-
-        return redirect()->route('admin.users.index')->with('status', 'Akun pengguna berhasil dibuat.');
+        return redirect()->route('admin.users.index')->with('status', "Akun {$role} berhasil dibuat.");
     }
 
     public function destroy(User $user): RedirectResponse

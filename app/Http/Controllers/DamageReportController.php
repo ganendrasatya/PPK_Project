@@ -46,12 +46,13 @@ class DamageReportController extends Controller
 
             $manageReports = $allQuery->orderBy('created_at', 'desc')->paginate(10, ['*'], 'manage_page');
 
+            $counts = Report::toBase()->selectRaw('status, count(*) as count')->groupBy('status')->pluck('count', 'status');
             $manageCounts = [
-                'menunggu' => Report::where('status', 'baru')->count(),
-                'diproses' => Report::where('status', 'diproses')->count(),
-                'selesai' => Report::where('status', 'selesai')->count(),
-                'ditolak' => Report::where('status', 'ditolak')->count(),
-                'semua' => Report::count(),
+                'menunggu' => $counts['baru'] ?? 0,
+                'diproses' => $counts['diproses'] ?? 0,
+                'selesai' => $counts['selesai'] ?? 0,
+                'ditolak' => $counts['ditolak'] ?? 0,
+                'semua' => $counts->sum(),
             ];
         }
 
@@ -90,13 +91,8 @@ class DamageReportController extends Controller
 
         $rules = [
             'status' => 'required|in:baru,diproses,selesai,ditolak',
+            'resolution_note' => (in_array($request->input('status'), ['selesai', 'ditolak']) ? 'required' : 'nullable') . '|string|max:255',
         ];
-
-        if (in_array($request->input('status'), ['selesai', 'ditolak'])) {
-            $rules['resolution_note'] = 'required|string|max:255';
-        } else {
-            $rules['resolution_note'] = 'nullable|string|max:255';
-        }
 
         $validated = $request->validate($rules, [
             'resolution_note.required' => 'Catatan resolusi wajib diisi saat laporan diselesaikan atau ditolak.',
@@ -114,3 +110,4 @@ class DamageReportController extends Controller
         return back()->with('success', 'Status penanganan laporan berhasil diperbarui menjadi ' . ucfirst($validated['status']) . '.');
     }
 }
+

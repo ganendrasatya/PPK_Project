@@ -21,13 +21,15 @@ class FacilityController extends Controller
             ->paginate(9)
             ->withQueryString();
 
+        $counts = Facility::toBase()->selectRaw('status, count(*) as count')->groupBy('status')->pluck('count', 'status');
+
         return view('admin.facilities.index', [
             'facilities' => $facilities,
             'statusCounts' => [
-                'semua' => Facility::count(),
-                'aktif' => Facility::where('status', 'aktif')->count(),
-                'nonaktif' => Facility::where('status', 'nonaktif')->count(),
-                'dalam_perbaikan' => Facility::where('status', 'dalam_perbaikan')->count(),
+                'semua' => $counts->sum(),
+                'aktif' => $counts['aktif'] ?? 0,
+                'nonaktif' => $counts['nonaktif'] ?? 0,
+                'dalam_perbaikan' => $counts['dalam_perbaikan'] ?? 0,
             ],
         ]);
     }
@@ -95,3 +97,4 @@ class FacilityController extends Controller
         return back()->with('status', $message)->with('success', $message);
     }
 }
+

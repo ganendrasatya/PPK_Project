@@ -28,11 +28,11 @@
                         <span class="bg-amber-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full leading-none">{{ $pendingCount }}</span>
                     @endif
                 </a>
-                <a href="{{ route('admin.users.create-petugas') }}"
+                <a href="{{ route('admin.users.create', ['role' => 'petugas']) }}"
                     class="inline-flex items-center gap-1.5 px-4 py-2 bg-teal-600 rounded-lg font-semibold text-xs text-white shadow-sm hover:bg-teal-700 transition">
                     + Akun Petugas
                 </a>
-                <a href="{{ route('admin.users.create-pengguna') }}"
+                <a href="{{ route('admin.users.create', ['role' => 'pengguna']) }}"
                     class="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-gray-300 rounded-lg font-semibold text-xs text-gray-700 shadow-sm hover:bg-gray-50 transition">
                     + Akun Pengguna
                 </a>

@@ -457,5 +457,49 @@ class UserPortalTest extends TestCase
             'status' => 'aktif',
         ]);
     }
+
+    public function test_admin_can_create_petugas_and_pengguna_accounts(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        // View form
+        $response = $this->actingAs($admin)->get(route('admin.users.create', ['role' => 'petugas']));
+        $response->assertOk();
+        $response->assertSee('Tambah Akun Petugas');
+
+        // Store petugas
+        $response = $this->actingAs($admin)->post(route('admin.users.store'), [
+            'name' => 'Petugas Baru',
+            'email' => 'petugas.baru@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'role' => 'petugas',
+        ]);
+
+        $response->assertRedirect(route('admin.users.index'));
+        $this->assertDatabaseHas('users', [
+            'name' => 'Petugas Baru',
+            'email' => 'petugas.baru@example.com',
+            'role' => 'petugas',
+            'status' => 'verified',
+        ]);
+
+        // Store pengguna
+        $response = $this->actingAs($admin)->post(route('admin.users.store'), [
+            'name' => 'Pengguna Baru',
+            'email' => 'pengguna.baru@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'role' => 'pengguna',
+        ]);
+
+        $response->assertRedirect(route('admin.users.index'));
+        $this->assertDatabaseHas('users', [
+            'name' => 'Pengguna Baru',
+            'email' => 'pengguna.baru@example.com',
+            'role' => 'pengguna',
+            'status' => 'verified',
+        ]);
+    }
 }
 

@@ -6,7 +6,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Password;
 
-class StorePenggunaRequest extends FormRequest
+class StoreUserRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -27,6 +27,8 @@ class StorePenggunaRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Password::defaults()],
+            'role' => ['required', 'in:petugas,pengguna'],
         ];
     }
 }
+

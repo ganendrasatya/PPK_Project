@@ -97,7 +97,7 @@
 
                     <!-- Bottom Status Switch & Actions -->
                     <div class="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between gap-2">
-                        <form method="POST" action="{{ route('admin.facilities.update-status', $facility) }}" class="w-36">
+                        <form method="POST" action="{{ route('petugas.facilities.update-status', $facility) }}" class="w-36">
                             @csrf
                             @method('PATCH')
                             <x-select-dropdown name="status" :nullable="false" :autosubmit="true"

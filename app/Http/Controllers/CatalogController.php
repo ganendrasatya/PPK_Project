@@ -75,10 +75,8 @@ class CatalogController extends Controller
 
     private function generateSlots(Facility $facility, string $date)
     {
-        $jamBuka = is_string($facility->jam_buka) ? $facility->jam_buka : $facility->jam_buka->format('H:i');
-        $jamTutup = is_string($facility->jam_tutup) ? $facility->jam_tutup : $facility->jam_tutup->format('H:i');
-        $startTime = Carbon::parse($jamBuka);
-        $endTime = Carbon::parse($jamTutup);
+        $startTime = Carbon::parse($facility->jam_buka);
+        $endTime = Carbon::parse($facility->jam_tutup);
         $slots = [];
 
         // Fetch reservations for this date
@@ -98,23 +96,11 @@ class CatalogController extends Controller
                 break;
             }
 
-            // Check if available
-            $available = true;
             $slotStartDatetime = Carbon::parse($date . ' ' . $slotStart->format('H:i:s'));
             $slotEndDatetime = Carbon::parse($date . ' ' . $slotEnd->format('H:i:s'));
 
-            foreach ($reservations as $reservation) {
-                // overlap condition: start < r_end AND end > r_start
-                if ($slotStartDatetime < $reservation->end_time && $slotEndDatetime > $reservation->start_time) {
-                    $available = false;
-                    break;
-                }
-            }
-            
-            // If the slot is in the past, make it unavailable
-            if ($slotStartDatetime < Carbon::now()) {
-                $available = false;
-            }
+            $isOverlapping = $reservations->contains(fn ($r) => $slotStartDatetime < $r->end_time && $slotEndDatetime > $r->start_time);
+            $available = ! $isOverlapping && $slotStartDatetime >= Carbon::now();
 
             $slots[] = [
                 'time' => $slotStart->format('H:i'),
