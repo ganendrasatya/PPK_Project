@@ -39,6 +39,26 @@ class Facility extends Model
         };
     }
 
+    /**
+     * Batalkan reservasi pending/disetujui yang belum selesai karena fasilitas
+     * tidak bisa dipakai. Mengembalikan jumlah reservasi yang dibatalkan.
+     */
+    public function cancelUpcomingReservations(): int
+    {
+        if ($this->status === 'aktif') {
+            return 0;
+        }
+
+        $reason = $this->status === 'dalam_perbaikan'
+            ? 'Dibatalkan otomatis: fasilitas sedang dalam perbaikan.'
+            : 'Dibatalkan otomatis: fasilitas sedang nonaktif.';
+
+        return $this->reservations()
+            ->whereIn('status', ['pending', 'approved'])
+            ->where('end_time', '>', now())
+            ->update(['status' => 'cancelled', 'cancel_reason' => $reason]);
+    }
+
     public function reservations(): HasMany
     {
         return $this->hasMany(Reservation::class);

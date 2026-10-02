@@ -140,11 +140,14 @@ class ReservationController extends Controller
         public function approve(Reservation $reservation)
     {
         $result = DB::transaction(function () use ($reservation) {
-            Facility::whereKey($reservation->facility_id)->lockForUpdate()->firstOrFail();
+            $facility = Facility::whereKey($reservation->facility_id)->lockForUpdate()->firstOrFail();
             $reservation->refresh();
 
             if ($reservation->status !== 'pending') {
                 return 'processed';
+            }
+            if ($facility->status !== 'aktif') {
+                return 'inactive';
             }
             if ($reservation->end_time->isPast()) {
                 return 'expired';
@@ -168,6 +171,7 @@ class ReservationController extends Controller
         return match ($result) {
             'processed' => back()->with('error', 'Reservasi ini sudah diproses sebelumnya.'),
             'expired'   => back()->with('error', 'Waktu reservasi sudah lewat dan tidak dapat disetujui.'),
+            'inactive'  => back()->with('error', 'Tidak dapat menyetujui: fasilitas sedang nonaktif atau dalam perbaikan.'),
             'conflict'  => back()->with('error', 'Tidak dapat menyetujui: jadwal bentrok dengan reservasi lain yang sudah disetujui.'),
             default     => back()->with('success', "Reservasi #{$reservation->id} berhasil disetujui."),
         };

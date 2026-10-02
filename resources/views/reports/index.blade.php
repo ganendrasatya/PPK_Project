@@ -328,7 +328,7 @@
                                                     @csrf
                                                     @method('PATCH')
                                                     <input type="hidden" name="status" value="dalam_perbaikan">
-                                                    <button type="submit" onclick="return confirm('Tandai fasilitas {{ $mReport->facility->nama_fasilitas }} sebagai Dalam Perbaikan? Pengguna tidak dapat mereservasi fasilitas ini sementara waktu.')"
+                                                    <button type="submit" onclick="return confirm('Tandai fasilitas {{ $mReport->facility->nama_fasilitas }} sebagai Dalam Perbaikan? Pengguna tidak dapat mereservasi fasilitas ini sementara waktu, dan semua reservasi mendatang (menunggu/disetujui) akan dibatalkan otomatis.')"
                                                         class="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-semibold px-2 py-0.5 rounded transition-colors flex items-center gap-1 text-[11px]">
                                                         <svg class="w-3 h-3 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.162 1.15-.1 1.667.18 1.107.597 1.517 1.968.92 3.076a2.25 2.25 0 01-1.01 1.01" /></svg>
                                                         Tandai Dalam Perbaikan

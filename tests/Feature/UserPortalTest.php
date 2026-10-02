@@ -173,6 +173,85 @@ class UserPortalTest extends TestCase
         $this->get($url)->assertRedirect('/login');
     }
 
+    public function test_petugas_cannot_approve_reservation_for_inactive_facility(): void
+    {
+        $petugas = User::factory()->petugas()->create();
+        $reservation = Reservation::create([
+            'user_id' => $this->user->id,
+            'facility_id' => $this->facility->id,
+            'purpose' => 'Latihan',
+            'start_time' => Carbon::tomorrow()->setTime(9, 0),
+            'end_time' => Carbon::tomorrow()->setTime(10, 0),
+            'status' => 'pending',
+        ]);
+
+        $this->facility->update(['status' => 'dalam_perbaikan']);
+
+        $this->actingAs($petugas)->post("/reservations/{$reservation->id}/approve")
+            ->assertSessionHas('error');
+        $this->assertDatabaseHas('reservations', ['id' => $reservation->id, 'status' => 'pending']);
+    }
+
+    public function test_deactivating_facility_cancels_upcoming_reservations(): void
+    {
+        $petugas = User::factory()->petugas()->create();
+        $make = fn (string $status, Carbon $start) => Reservation::create([
+            'user_id' => $this->user->id,
+            'facility_id' => $this->facility->id,
+            'purpose' => 'Kegiatan',
+            'start_time' => $start,
+            'end_time' => $start->copy()->addHour(),
+            'status' => $status,
+        ]);
+
+        $pending = $make('pending', Carbon::tomorrow()->setTime(9, 0));
+        $approved = $make('approved', Carbon::tomorrow()->setTime(13, 0));
+        $past = $make('approved', Carbon::now()->subDays(2)->setTime(9, 0));
+        $rejected = $make('rejected', Carbon::tomorrow()->setTime(15, 0));
+
+        $this->actingAs($petugas)->patch("/facilities/{$this->facility->id}/status", ['status' => 'dalam_perbaikan'])
+            ->assertSessionHas('success', fn ($msg) => str_contains($msg, '2 reservasi mendatang dibatalkan otomatis'));
+
+        foreach ([$pending, $approved] as $r) {
+            $this->assertDatabaseHas('reservations', [
+                'id' => $r->id,
+                'status' => 'cancelled',
+                'cancel_reason' => 'Dibatalkan otomatis: fasilitas sedang dalam perbaikan.',
+            ]);
+        }
+        // Riwayat yang sudah lewat & yang sudah ditolak tidak diubah
+        $this->assertDatabaseHas('reservations', ['id' => $past->id, 'status' => 'approved']);
+        $this->assertDatabaseHas('reservations', ['id' => $rejected->id, 'status' => 'rejected']);
+    }
+
+    public function test_admin_edit_facility_to_nonaktif_cancels_upcoming_reservations(): void
+    {
+        $reservation = Reservation::create([
+            'user_id' => $this->user->id,
+            'facility_id' => $this->facility->id,
+            'purpose' => 'Kegiatan',
+            'start_time' => Carbon::tomorrow()->setTime(9, 0),
+            'end_time' => Carbon::tomorrow()->setTime(10, 0),
+            'status' => 'approved',
+        ]);
+
+        $this->actingAs($this->admin)->put("/admin/facilities/{$this->facility->id}", [
+            'nama_fasilitas' => $this->facility->nama_fasilitas,
+            'tipe' => $this->facility->tipe,
+            'lokasi' => $this->facility->lokasi,
+            'kapasitas' => $this->facility->kapasitas,
+            'status' => 'nonaktif',
+            'jam_buka' => '07:00',
+            'jam_tutup' => '18:00',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('reservations', [
+            'id' => $reservation->id,
+            'status' => 'cancelled',
+            'cancel_reason' => 'Dibatalkan otomatis: fasilitas sedang nonaktif.',
+        ]);
+    }
+
     public function test_user_can_view_reservations_history(): void
     {
         $startTime = Carbon::tomorrow()->setTime(9, 0);
