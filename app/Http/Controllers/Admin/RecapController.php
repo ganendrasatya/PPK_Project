@@ -2,9 +2,14 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\RecapExport;
 use App\Http\Controllers\Controller;
 use App\Models\Facility;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Response;
 use Illuminate\View\View;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class RecapController extends Controller
@@ -40,6 +45,18 @@ class RecapController extends Controller
         return response()->streamDownload($callback, 'rekap-fasilitas.csv', [
             'Content-Type' => 'text/csv',
         ]);
+    }
+
+    public function exportExcel(): BinaryFileResponse
+    {
+        return Excel::download(new RecapExport($this->recapData()), 'rekap-fasilitas.xlsx');
+    }
+
+    public function exportPdf(): Response
+    {
+        return Pdf::loadView('admin.reports.recap-pdf', ['facilities' => $this->recapData()])
+            ->setPaper('a4', 'landscape')
+            ->download('rekap-fasilitas.pdf');
     }
 
     private function recapData()

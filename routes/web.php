@@ -69,6 +69,8 @@ Route::middleware(['auth', 'account.verified', 'role:admin'])->prefix('admin')->
     // Recap & Export
     Route::get('/recap', [RecapController::class, 'index'])->name('recap.index');
     Route::get('/recap/export.csv', [RecapController::class, 'exportCsv'])->name('recap.export');
+    Route::get('/recap/export.xlsx', [RecapController::class, 'exportExcel'])->name('recap.export-excel');
+    Route::get('/recap/export.pdf', [RecapController::class, 'exportPdf'])->name('recap.export-pdf');
 });
 
 require __DIR__.'/auth.php';

@@ -30,6 +30,15 @@ class Facility extends Model
         ];
     }
 
+    public function getStatusLabelAttribute(): string
+    {
+        return match ($this->status) {
+            'aktif' => 'Aktif',
+            'dalam_perbaikan' => 'Dalam Perbaikan',
+            default => 'Nonaktif',
+        };
+    }
+
     public function reservations(): HasMany
     {
         return $this->hasMany(Reservation::class);
