@@ -107,7 +107,11 @@ class DamageReportController extends Controller
             'resolution_note' => $validated['resolution_note'] ?? $report->resolution_note,
         ]);
 
-        if ($request->boolean('reactivate_facility') && $report->facility) {
+        // Hanya laporan yang diselesaikan yang boleh mengaktifkan kembali fasilitas yang sedang diperbaiki
+        // (fasilitas yang sengaja dinonaktifkan admin tidak ikut aktif)
+        if ($request->boolean('reactivate_facility')
+            && $validated['status'] === 'selesai'
+            && $report->facility?->status === 'dalam_perbaikan') {
             $report->facility->update(['status' => 'aktif']);
         }
 

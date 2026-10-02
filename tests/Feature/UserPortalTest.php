@@ -339,6 +339,39 @@ class UserPortalTest extends TestCase
             ->assertSee('Kegiatan Lain');
     }
 
+    public function test_reactivate_facility_only_when_report_resolved(): void
+    {
+        $petugas = User::factory()->petugas()->create();
+        $makeReport = fn () => Report::create([
+            'user_id' => $this->user->id,
+            'facility_id' => $this->facility->id,
+            'title' => 'Lampu Mati',
+            'category' => 'Kelistrikan & Lampu',
+            'description' => 'Lampu tribun padam total.',
+            'status' => 'baru',
+        ]);
+
+        // Status bukan "selesai" -> fasilitas tetap dalam perbaikan
+        $this->facility->update(['status' => 'dalam_perbaikan']);
+        foreach (['diproses' => null, 'ditolak' => 'Laporan duplikat.'] as $status => $note) {
+            $this->actingAs($petugas)->patch('/reports/' . $makeReport()->id . '/status', array_filter([
+                'status' => $status,
+                'resolution_note' => $note,
+                'reactivate_facility' => 1,
+            ]))->assertSessionHas('success');
+            $this->assertSame('dalam_perbaikan', $this->facility->fresh()->status);
+        }
+
+        // Fasilitas yang sengaja dinonaktifkan admin tidak ikut aktif
+        $this->facility->update(['status' => 'nonaktif']);
+        $this->actingAs($petugas)->patch('/reports/' . $makeReport()->id . '/status', [
+            'status' => 'selesai',
+            'resolution_note' => 'Sudah diperbaiki.',
+            'reactivate_facility' => 1,
+        ])->assertSessionHas('success');
+        $this->assertSame('nonaktif', $this->facility->fresh()->status);
+    }
+
     public function test_user_can_view_reservations_history(): void
     {
         $startTime = Carbon::tomorrow()->setTime(9, 0);
