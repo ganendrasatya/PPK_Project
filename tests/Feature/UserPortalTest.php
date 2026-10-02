@@ -111,6 +111,7 @@ class UserPortalTest extends TestCase
     public function test_user_can_create_reservation_with_required_documents(): void
     {
         Storage::fake('public');
+        Storage::fake('local');
 
         $tomorrow = Carbon::tomorrow()->format('Y-m-d');
         $kegiatan = UploadedFile::fake()->create('proposal_kegiatan.pdf', 100, 'application/pdf');
@@ -133,6 +134,43 @@ class UserPortalTest extends TestCase
             'purpose' => 'Latihan rutin UKM Basket',
             'status' => 'pending',
         ]);
+    }
+
+    public function test_reservation_documents_are_private(): void
+    {
+        Storage::fake('public');
+        Storage::fake('local');
+
+        $this->actingAs($this->user)->post('/reservations', [
+            'facility_id' => $this->facility->id,
+            'date' => Carbon::tomorrow()->format('Y-m-d'),
+            'start_time' => '09:00',
+            'end_time' => '10:00',
+            'purpose' => 'Latihan rutin UKM Basket',
+            'proposal_kegiatan' => UploadedFile::fake()->create('kegiatan.pdf', 100, 'application/pdf'),
+            'proposal_permohonan' => UploadedFile::fake()->create('permohonan.pdf', 100, 'application/pdf'),
+        ])->assertSessionHas('success');
+
+        $reservation = Reservation::latest('id')->first();
+
+        // Tidak tersimpan di disk public
+        Storage::disk('local')->assertExists($reservation->proposal_kegiatan_path);
+        Storage::disk('public')->assertMissing($reservation->proposal_kegiatan_path);
+
+        $url = "/reservations/{$reservation->id}/documents/kegiatan";
+
+        // Pemilik, petugas, dan admin boleh membuka
+        $this->actingAs($this->user)->get($url)->assertOk();
+        $this->actingAs(User::factory()->petugas()->create())->get($url)->assertOk();
+        $this->actingAs($this->admin)->get($url)->assertOk();
+
+        // Pengguna lain ditolak
+        $other = User::factory()->create(['role' => 'pengguna', 'status' => 'verified']);
+        $this->actingAs($other)->get($url)->assertForbidden();
+
+        // Tamu diarahkan ke login
+        auth()->logout();
+        $this->get($url)->assertRedirect('/login');
     }
 
     public function test_user_can_view_reservations_history(): void

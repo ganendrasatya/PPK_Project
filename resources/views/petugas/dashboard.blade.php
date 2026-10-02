@@ -197,7 +197,7 @@
                             <p class="text-gray-400 text-xs uppercase font-semibold mb-2">Berkas Terlampir</p>
                             <div class="space-y-2">
                                 @if ($reservation->proposal_kegiatan_path)
-                                    <a href="{{ Storage::url($reservation->proposal_kegiatan_path) }}" target="_blank"
+                                    <a href="{{ route('reservations.document', [$reservation, 'kegiatan']) }}" target="_blank"
                                        class="flex items-center gap-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors">
                                         <svg class="w-5 h-5 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6 15h1.5m-9-1.5h6" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-6-6H6a2.25 2.25 0 00-2.25 2.25v15A2.25 2.25 0 006 21h12a2.25 2.25 0 002.25-2.25V8.25z" /></svg>
                                         <span class="flex-1 truncate">Proposal Kegiatan</span>
@@ -205,7 +205,7 @@
                                     </a>
                                 @endif
                                 @if ($reservation->proposal_permohonan_path)
-                                    <a href="{{ Storage::url($reservation->proposal_permohonan_path) }}" target="_blank"
+                                    <a href="{{ route('reservations.document', [$reservation, 'permohonan']) }}" target="_blank"
                                        class="flex items-center gap-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors">
                                         <svg class="w-5 h-5 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6 15h1.5m-9-1.5h6" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-6-6H6a2.25 2.25 0 00-2.25 2.25v15A2.25 2.25 0 006 21h12a2.25 2.25 0 002.25-2.25V8.25z" /></svg>
                                         <span class="flex-1 truncate">Surat Permohonan Peminjaman</span>

@@ -9,6 +9,7 @@ use App\Models\Reservation;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class ReservationController extends Controller
 {
@@ -77,8 +78,9 @@ class ReservationController extends Controller
                 'user_id' => Auth::id(),
                 'facility_id' => $validated['facility_id'],
                 'purpose' => $validated['purpose'],
-                'proposal_kegiatan_path' => $request->file('proposal_kegiatan')->store('proposals', 'public'),
-                'proposal_permohonan_path' => $request->file('proposal_permohonan')->store('proposals', 'public'),
+                // Disk privat: dokumen hanya bisa dibuka lewat route document()
+                'proposal_kegiatan_path' => $request->file('proposal_kegiatan')->store('proposals', 'local'),
+                'proposal_permohonan_path' => $request->file('proposal_permohonan')->store('proposals', 'local'),
                 'start_time' => $startTime,
                 'end_time' => $endTime,
                 'status' => 'pending',
@@ -90,6 +92,30 @@ class ReservationController extends Controller
         }
 
         return back()->with('success', 'Reservasi berhasil dibuat. Menunggu persetujuan admin.');
+    }
+
+    public function document(Reservation $reservation, string $type)
+    {
+        $user = Auth::user();
+        if ($reservation->user_id !== $user->id && ! $user->isAdmin() && ! $user->isPetugas()) {
+            abort(403);
+        }
+
+        $path = match ($type) {
+            'kegiatan' => $reservation->proposal_kegiatan_path,
+            'permohonan' => $reservation->proposal_permohonan_path,
+            default => null,
+        };
+
+        if (! $path || ! Storage::disk('local')->exists($path)) {
+            abort(404);
+        }
+
+        $filename = "RSV-" . str_pad($reservation->id, 5, '0', STR_PAD_LEFT) . "-{$type}.pdf";
+
+        return Storage::disk('local')->response($path, $filename, [
+            'Content-Type' => 'application/pdf',
+        ]);
     }
 
     public function cancel(Reservation $reservation)
