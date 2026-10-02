@@ -55,7 +55,7 @@ class CatalogController extends Controller
             abort(404);
         }
 
-        $date = $request->input('date', Carbon::today()->format('Y-m-d'));
+        $date = $this->resolveDate($request);
         $slots = $this->generateSlots($facility, $date);
 
         return view('catalog.show', compact('facility', 'slots', 'date'));
@@ -67,10 +67,24 @@ class CatalogController extends Controller
             return response()->json(['error' => 'Facility not active'], 400);
         }
 
-        $date = $request->input('date', Carbon::today()->format('Y-m-d'));
+        $date = $this->resolveDate($request);
         $slots = $this->generateSlots($facility, $date);
 
         return response()->json($slots);
+    }
+
+    // Tanggal yang tidak valid atau sudah lewat dikembalikan ke hari ini (WIB)
+    private function resolveDate(Request $request): string
+    {
+        $today = Carbon::today()->format('Y-m-d');
+
+        try {
+            $date = Carbon::createFromFormat('Y-m-d', (string) $request->input('date', $today))->format('Y-m-d');
+        } catch (\Throwable) {
+            return $today;
+        }
+
+        return $date < $today ? $today : $date;
     }
 
     private function generateSlots(Facility $facility, string $date)
@@ -98,28 +112,29 @@ class CatalogController extends Controller
                 break;
             }
 
-            // Check if available
-            $available = true;
             $slotStartDatetime = Carbon::parse($date . ' ' . $slotStart->format('H:i:s'));
             $slotEndDatetime = Carbon::parse($date . ' ' . $slotEnd->format('H:i:s'));
+
+            $state = 'available';
 
             foreach ($reservations as $reservation) {
                 // overlap condition: start < r_end AND end > r_start
                 if ($slotStartDatetime < $reservation->end_time && $slotEndDatetime > $reservation->start_time) {
-                    $available = false;
+                    $state = 'booked';
                     break;
                 }
             }
-            
-            // If the slot is in the past, make it unavailable
-            if ($slotStartDatetime < Carbon::now()) {
-                $available = false;
+
+            // Slot yang jam mulainya sudah lewat (waktu Jakarta) tidak bisa dipilih
+            if ($slotStartDatetime <= Carbon::now()) {
+                $state = 'past';
             }
 
             $slots[] = [
                 'time' => $slotStart->format('H:i'),
                 'end_time' => $slotEnd->format('H:i'),
-                'available' => $available,
+                'available' => $state === 'available',
+                'state' => $state,
             ];
 
             $currentTime->addMinutes(30);

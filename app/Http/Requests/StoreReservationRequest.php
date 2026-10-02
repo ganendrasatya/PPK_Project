@@ -49,7 +49,7 @@ class StoreReservationRequest extends FormRequest
             if ($start->minute % 30 !== 0 || $end->minute % 30 !== 0) {
                 $validator->errors()->add('start_time', 'Waktu harus berkelipatan 30 menit.');
             }
-            if ($start->lt(now())) {
+            if ($start->lte(now())) {
                 $validator->errors()->add('start_time', 'Waktu mulai sudah lewat.');
             }
         }];
