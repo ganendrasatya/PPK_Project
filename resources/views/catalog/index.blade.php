@@ -132,7 +132,7 @@
                         
                         <div class="flex flex-wrap gap-x-4 gap-y-2 mt-4 text-sm text-gray-600 font-medium">
                             <span class="flex items-center gap-1.5"><i class="ph ph-users text-lg text-gray-400"></i> Kapasitas {{ $facility->kapasitas }} orang</span>
-                            <span class="flex items-center gap-1.5"><i class="ph ph-clock text-lg text-gray-400"></i> Min. 1 jam / Sesi</span>
+                            <span class="flex items-center gap-1.5"><i class="ph ph-clock text-lg text-gray-400"></i> Sesi per 30 menit</span>
                         </div>
 
                         @if($facility->status === 'dalam_perbaikan')
@@ -145,9 +145,10 @@
 
                         <div class="flex items-center justify-between mt-auto">
                             <div>
-                                <div class="text-xs text-gray-400 mb-0.5">Status Hari Ini</div>
+                                <div class="text-xs text-gray-400 mb-0.5">
+                                    {{ $date === now()->format('Y-m-d') ? 'Status Hari Ini' : 'Status ' . \Carbon\Carbon::parse($date)->translatedFormat('d M Y') }}
+                                </div>
                                 @php
-                                    // Mock available count or pass from controller
                                     $availableCount = $facility->available_slots_count ?? 0;
                                 @endphp
                                 @if($availableCount > 0)
@@ -158,7 +159,7 @@
                             </div>
                             
                             @if($facility->status === 'aktif')
-                                <a href="{{ route('catalog.show', $facility) }}" class="text-teal-600 font-medium text-sm hover:text-teal-800 transition-colors flex items-center gap-1">
+                                <a href="{{ route('catalog.show', ['facility' => $facility, 'date' => $date]) }}" class="text-teal-600 font-medium text-sm hover:text-teal-800 transition-colors flex items-center gap-1">
                                     Lihat Jadwal <span aria-hidden="true">&rarr;</span>
                                 </a>
                             @else

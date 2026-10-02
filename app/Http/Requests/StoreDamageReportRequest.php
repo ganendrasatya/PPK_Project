@@ -41,9 +41,9 @@ class StoreDamageReportRequest extends FormRequest
             'description.min' => 'Deskripsi kerusakan minimal 10 karakter.',
             'description.max' => 'Deskripsi kerusakan maksimal 500 karakter.',
             'photo.image' => 'Foto harus berupa gambar.',
-            'photo.uploaded' => 'Foto gagal diunggah. Periksa ukuran file.', // <-- Pesan baru ditambahkan di sini
+            'photo.uploaded' => 'File hanya bisa max 5MB',
             'photo.mimes' => 'Format foto harus berupa JPG, PNG, atau WebP.',
-            'photo.max' => 'Ukuran foto maksimal 5MB.',
+            'photo.max' => 'File hanya bisa max 5MB',
         ];
     }
 }
