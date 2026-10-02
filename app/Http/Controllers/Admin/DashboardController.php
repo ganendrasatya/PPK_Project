@@ -13,6 +13,8 @@ class DashboardController extends Controller
 {
     public function index(): View
     {
+        Reservation::expireStalePending();
+
         return view('admin.dashboard', [
             'totalFacilities' => Facility::count(),
             'pendingUsers' => User::where('status', 'pending')->count(),

@@ -17,6 +17,20 @@ class Reservation extends Model
         ];
     }
 
+    public const EXPIRED_REASON = 'Kedaluwarsa: tidak diproses petugas sebelum waktu mulai.';
+
+    /**
+     * Reservasi pending yang waktu mulainya sudah lewat tidak mungkin lagi disetujui;
+     * tandai sebagai ditolak agar tidak menumpuk di antrean petugas.
+     * Mengembalikan jumlah reservasi yang dikedaluwarsakan.
+     */
+    public static function expireStalePending(): int
+    {
+        return static::where('status', 'pending')
+            ->where('start_time', '<=', now())
+            ->update(['status' => 'rejected', 'cancel_reason' => self::EXPIRED_REASON, 'updated_at' => now()]);
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

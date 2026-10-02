@@ -20,6 +20,8 @@ class ReservationController extends Controller
 {
     public function index(Request $request)
     {
+        Reservation::expireStalePending();
+
         $status = $request->input('status');
         $search = $request->input('search');
         $user = Auth::user();
@@ -178,7 +180,8 @@ class ReservationController extends Controller
             if ($facility->status !== 'aktif') {
                 return 'inactive';
             }
-            if ($reservation->end_time->isPast()) {
+            if ($reservation->start_time->isPast()) {
+                $reservation->update(['status' => 'rejected', 'cancel_reason' => Reservation::EXPIRED_REASON]);
                 return 'expired';
             }
 
@@ -203,7 +206,7 @@ class ReservationController extends Controller
 
         return match ($result) {
             'processed' => back()->with('error', 'Reservasi ini sudah diproses sebelumnya.'),
-            'expired'   => back()->with('error', 'Waktu reservasi sudah lewat dan tidak dapat disetujui.'),
+            'expired'   => back()->with('error', 'Waktu mulai reservasi sudah lewat sehingga tidak dapat disetujui; reservasi ditandai kedaluwarsa.'),
             'inactive'  => back()->with('error', 'Tidak dapat menyetujui: fasilitas sedang nonaktif atau dalam perbaikan.'),
             'conflict'  => back()->with('error', 'Tidak dapat menyetujui: jadwal bentrok dengan reservasi lain yang sudah disetujui.'),
             default     => back()->with('success', "Reservasi #{$reservation->id} berhasil disetujui."),

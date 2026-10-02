@@ -133,6 +133,14 @@
         @endisset
 
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            {{-- Pesan sukses ditampilkan per halaman (session 'status'); pesan error untuk semua halaman admin --}}
+            @if (session('error'))
+                <div x-data="{ show: true }" x-show="show" class="mb-4 rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 border border-rose-200 flex items-start justify-between gap-3">
+                    <span>{{ session('error') }}</span>
+                    <button type="button" @click="show = false" class="text-rose-500 hover:text-rose-700 shrink-0" aria-label="Tutup">&times;</button>
+                </div>
+            @endif
+
             {{ $slot }}
         </main>
     </div>
