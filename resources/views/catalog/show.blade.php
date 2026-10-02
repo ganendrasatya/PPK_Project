@@ -157,6 +157,12 @@
                                 </button>
                             </div>
 
+                            <!-- Notif file terlalu besar / bukan PDF -->
+                            <div x-show="fileNotice" x-transition.duration.200ms style="display: none;" class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-2.5 rounded-xl flex items-center gap-2 text-sm font-semibold">
+                                <i class="ph ph-warning-circle text-red-500 text-lg"></i>
+                                <span x-text="fileNotice"></span>
+                            </div>
+
                             <form action="{{ route('reservations.store') }}" method="POST" enctype="multipart/form-data" id="reservation-form" @submit="validateFiles($event)">
                                 @csrf
                                 <input type="hidden" name="facility_id" value="{{ $facility->id }}">
@@ -377,6 +383,8 @@
                 },
 
                 fileErrors: {},
+                fileNotice: null,
+                fileNoticeTimer: null,
 
                 // Batas 5MB per dokumen, sama dengan validasi di server
                 checkFile(event) {
@@ -386,9 +394,14 @@
                     if (file && file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
                         message = 'File harus berformat PDF.';
                     } else if (file && file.size > 5 * 1024 * 1024) {
-                        message = `Ukuran file ${(file.size / 1024 / 1024).toFixed(1)}MB melebihi batas maksimal 5MB.`;
+                        message = 'File hanya bisa max 5MB';
                     }
                     this.fileErrors = { ...this.fileErrors, [input.name]: message };
+                    if (message) {
+                        this.fileNotice = message;
+                        clearTimeout(this.fileNoticeTimer);
+                        this.fileNoticeTimer = setTimeout(() => { this.fileNotice = null; }, 4000);
+                    }
                     if (message) input.value = '';
                     return !message;
                 },

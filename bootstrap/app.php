@@ -31,6 +31,6 @@ return Application::configure(basePath: dirname(__DIR__))
                 return null;
             }
 
-            return back()->with('error', 'Ukuran file yang diunggah terlalu besar. Setiap dokumen PDF maksimal 5MB.');
+            return back()->with('error', 'File hanya bisa max 5MB');
         });
     })->create();
