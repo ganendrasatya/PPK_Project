@@ -15,6 +15,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Tunnel (cloudflared) berjalan di PC yang sama: percayai header X-Forwarded-* hanya dari localhost,
+        // agar URL memakai https + domain tunnel dan request()->ip() berisi IP asli pengunjung.
+        $middleware->trustProxies(at: ['127.0.0.1', '::1']);
+
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
             'account.verified' => EnsureUserIsVerified::class, // <-- Taruh di sini
