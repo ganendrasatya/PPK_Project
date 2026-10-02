@@ -313,6 +313,32 @@ class UserPortalTest extends TestCase
             ->assertSessionHas('error');
     }
 
+    public function test_user_can_search_reservation_by_displayed_id(): void
+    {
+        $make = fn (string $purpose, int $day) => Reservation::create([
+            'user_id' => $this->user->id,
+            'facility_id' => $this->facility->id,
+            'purpose' => $purpose,
+            'start_time' => Carbon::now()->addDays($day)->setTime(9, 0),
+            'end_time' => Carbon::now()->addDays($day)->setTime(10, 0),
+            'status' => 'pending',
+        ]);
+        $target = $make('Kegiatan Dicari', 1);
+        $make('Kegiatan Lain', 2);
+
+        $code = str_pad($target->id, 5, '0', STR_PAD_LEFT);
+        foreach (["#RSV-{$code}", "RSV-{$code}", "rsv{$target->id}", $code, (string) $target->id] as $search) {
+            $this->actingAs($this->user)->get('/reservations?search=' . urlencode($search))
+                ->assertSee('Kegiatan Dicari')
+                ->assertDontSee('Kegiatan Lain');
+        }
+
+        // Pencarian nama fasilitas tetap berfungsi
+        $this->actingAs($this->user)->get('/reservations?search=Basket')
+            ->assertSee('Kegiatan Dicari')
+            ->assertSee('Kegiatan Lain');
+    }
+
     public function test_user_can_view_reservations_history(): void
     {
         $startTime = Carbon::tomorrow()->setTime(9, 0);

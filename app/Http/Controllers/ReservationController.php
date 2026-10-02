@@ -27,8 +27,11 @@ class ReservationController extends Controller
         }
 
         if ($search) {
-            $query->where(function($q) use ($search) {
-                $q->where('id', $search)
+            // ID ditampilkan sebagai "#RSV-00012"; terima juga "RSV-00012", "rsv12", "00012", atau "12"
+            $searchId = preg_match('/^#?\s*(?:rsv)?[-\s]*0*(\d+)$/i', trim($search), $m) ? (int) $m[1] : null;
+
+            $query->where(function($q) use ($search, $searchId) {
+                $q->when($searchId, fn ($qId) => $qId->where('id', $searchId))
                   ->orWhereHas('facility', function($qF) use ($search) {
                       $qF->where('nama_fasilitas', 'like', "%{$search}%");
                   });
