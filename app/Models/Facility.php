@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Notifications\ReservationCancelledNotification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -53,10 +54,18 @@ class Facility extends Model
             ? 'Dibatalkan otomatis: fasilitas sedang dalam perbaikan.'
             : 'Dibatalkan otomatis: fasilitas sedang nonaktif.';
 
-        return $this->reservations()
+        $reservations = $this->reservations()
+            ->with('user')
             ->whereIn('status', ['pending', 'approved'])
             ->where('end_time', '>', now())
-            ->update(['status' => 'cancelled', 'cancel_reason' => $reason]);
+            ->get();
+
+        foreach ($reservations as $reservation) {
+            $reservation->update(['status' => 'cancelled', 'cancel_reason' => $reason]);
+            $reservation->user?->notifySafely(new ReservationCancelledNotification($reservation));
+        }
+
+        return $reservations->count();
     }
 
     public function reservations(): HasMany

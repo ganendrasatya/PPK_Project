@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Notifications\RegistrationPendingNotification;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -44,6 +45,8 @@ class RegisteredUserController extends Controller
         ]);
 
         event(new Registered($user));
+
+        $user->notifySafely(new RegistrationPendingNotification);
 
         return redirect()->route('login')->with('status', 'Registrasi berhasil. Akun Anda menunggu verifikasi admin sebelum dapat digunakan untuk login.');
     }

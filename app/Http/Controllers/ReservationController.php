@@ -7,6 +7,10 @@ use App\Models\Facility;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use App\Models\Reservation;
+use App\Notifications\ReservationApprovedNotification;
+use App\Notifications\ReservationCancelledNotification;
+use App\Notifications\ReservationRejectedNotification;
+use App\Notifications\ReservationSubmittedNotification;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -94,6 +98,8 @@ class ReservationController extends Controller
         if (! $reservation) {
             return back()->withInput()->with('error', 'Waktu yang dipilih sudah dibooking atau dalam proses persetujuan.');
         }
+
+        $request->user()->notifySafely(new ReservationSubmittedNotification($reservation));
 
         return back()->with('success', 'Reservasi berhasil dibuat. Menunggu persetujuan admin.');
     }
@@ -191,6 +197,10 @@ class ReservationController extends Controller
             return 'ok';
         });
 
+        if ($result === 'ok') {
+            $reservation->user?->notifySafely(new ReservationApprovedNotification($reservation));
+        }
+
         return match ($result) {
             'processed' => back()->with('error', 'Reservasi ini sudah diproses sebelumnya.'),
             'expired'   => back()->with('error', 'Waktu reservasi sudah lewat dan tidak dapat disetujui.'),
@@ -214,6 +224,8 @@ class ReservationController extends Controller
             'status' => 'rejected',
             'cancel_reason' => $validated['reason'],
         ]);
+
+        $reservation->user?->notifySafely(new ReservationRejectedNotification($reservation));
 
         return back()->with('success', "Reservasi #{$reservation->id} ditolak.");
     }
@@ -239,6 +251,8 @@ class ReservationController extends Controller
             'status' => 'cancelled',
             'cancel_reason' => $validated['reason'],
         ]);
+
+        $reservation->user?->notifySafely(new ReservationCancelledNotification($reservation));
 
         return back()->with('success', "Reservasi #{$reservation->id} berhasil dibatalkan oleh petugas.");
     }

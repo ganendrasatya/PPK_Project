@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StorePenggunaRequest;
 use App\Http\Requests\Admin\StorePetugasRequest;
 use App\Models\User;
+use App\Notifications\AccountApprovedNotification;
+use App\Notifications\AccountRejectedNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -42,7 +44,12 @@ class UserController extends Controller
             return back()->with('error', 'Akun admin tidak dapat diubah statusnya.');
         }
 
+        $wasVerified = $user->status === 'verified';
         $user->update(['status' => 'verified']);
+
+        if (! $wasVerified) {
+            $user->notifySafely(new AccountApprovedNotification);
+        }
 
         return back()->with('status', "Akun {$user->name} berhasil diverifikasi.");
     }
@@ -53,7 +60,12 @@ class UserController extends Controller
             return back()->with('error', 'Akun admin tidak dapat diubah statusnya.');
         }
 
+        $wasRejected = $user->status === 'rejected';
         $user->update(['status' => 'rejected']);
+
+        if (! $wasRejected) {
+            $user->notifySafely(new AccountRejectedNotification);
+        }
 
         return back()->with('status', "Akun {$user->name} ditolak.");
     }
