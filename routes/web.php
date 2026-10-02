@@ -35,6 +35,7 @@ Route::middleware(['auth', 'account.verified'])->group(function () {
     Route::get('/reservations/{reservation}/documents/{type}', [ReservationController::class, 'document'])
         ->whereIn('type', ['kegiatan', 'permohonan'])
         ->name('reservations.document');
+    Route::get('/reservations/{reservation}/proof', [ReservationController::class, 'proof'])->name('reservations.proof');
     
     Route::get('/reports', [DamageReportController::class, 'index'])->name('reports.index');
     Route::post('/reports', [DamageReportController::class, 'store'])->name('reports.store');

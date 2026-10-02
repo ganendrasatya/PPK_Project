@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreReservationRequest;
 use App\Models\Facility;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use App\Models\Reservation;
 use Carbon\Carbon;
@@ -116,6 +117,25 @@ class ReservationController extends Controller
         return Storage::disk('local')->response($path, $filename, [
             'Content-Type' => 'application/pdf',
         ]);
+    }
+
+    public function proof(Reservation $reservation)
+    {
+        $user = Auth::user();
+        if ($reservation->user_id !== $user->id && ! $user->isAdmin() && ! $user->isPetugas()) {
+            abort(403);
+        }
+
+        if ($reservation->status !== 'approved') {
+            return back()->with('error', 'Bukti persetujuan hanya tersedia untuk reservasi yang sudah disetujui.');
+        }
+
+        $reservation->load(['facility', 'user']);
+        $code = 'RSV-' . str_pad($reservation->id, 5, '0', STR_PAD_LEFT);
+
+        return Pdf::loadView('reservations.proof-pdf', compact('reservation', 'code'))
+            ->setPaper('a4')
+            ->download("bukti-persetujuan-{$code}.pdf");
     }
 
     public function cancel(Reservation $reservation)

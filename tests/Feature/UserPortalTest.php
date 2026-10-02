@@ -272,6 +272,47 @@ class UserPortalTest extends TestCase
         ]);
     }
 
+    public function test_user_can_download_approval_proof(): void
+    {
+        $reservation = Reservation::create([
+            'user_id' => $this->user->id,
+            'facility_id' => $this->facility->id,
+            'purpose' => 'Seminar',
+            'start_time' => Carbon::tomorrow()->setTime(9, 0),
+            'end_time' => Carbon::tomorrow()->setTime(10, 0),
+            'status' => 'approved',
+        ]);
+        $code = 'RSV-' . str_pad($reservation->id, 5, '0', STR_PAD_LEFT);
+
+        $response = $this->actingAs($this->user)->get("/reservations/{$reservation->id}/proof");
+        $response->assertOk()->assertDownload("bukti-persetujuan-{$code}.pdf");
+        $this->assertStringStartsWith('%PDF', $response->getContent());
+
+        // Halaman Reservasi Saya menautkan ke bukti ini
+        $this->actingAs($this->user)->get('/reservations')
+            ->assertSee(route('reservations.proof', $reservation), false);
+
+        // Pengguna lain tidak boleh mengunduh
+        $other = User::factory()->create(['role' => 'pengguna', 'status' => 'verified']);
+        $this->actingAs($other)->get("/reservations/{$reservation->id}/proof")->assertForbidden();
+    }
+
+    public function test_approval_proof_unavailable_for_pending_reservation(): void
+    {
+        $reservation = Reservation::create([
+            'user_id' => $this->user->id,
+            'facility_id' => $this->facility->id,
+            'purpose' => 'Seminar',
+            'start_time' => Carbon::tomorrow()->setTime(9, 0),
+            'end_time' => Carbon::tomorrow()->setTime(10, 0),
+            'status' => 'pending',
+        ]);
+
+        $this->actingAs($this->user)->get("/reservations/{$reservation->id}/proof")
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
     public function test_user_can_view_reservations_history(): void
     {
         $startTime = Carbon::tomorrow()->setTime(9, 0);

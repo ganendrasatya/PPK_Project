@@ -17,7 +17,7 @@
 </head>
 <body>
     <h1>Rekap Okupansi &amp; Laporan Kerusakan</h1>
-    <div class="meta">Dicetak {{ now()->translatedFormat('d F Y, H:i') }} WIB &middot; {{ $facilities->count() }} fasilitas</div>
+    <div class="meta">Dicetak {{ now()->locale('id')->translatedFormat('d F Y, H:i') }} WIB &middot; {{ $facilities->count() }} fasilitas</div>
 
     <table>
         <thead>
