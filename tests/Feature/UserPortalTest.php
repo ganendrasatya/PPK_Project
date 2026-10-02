@@ -57,6 +57,17 @@ class UserPortalTest extends TestCase
         $response->assertSee('07.00–18.00 WIB');
     }
 
+    public function test_catalog_falls_back_to_today_for_invalid_or_past_date(): void
+    {
+        $today = Carbon::today()->format('Y-m-d');
+
+        foreach (['abc', '2026-13-45', '2020-01-01'] as $date) {
+            $response = $this->actingAs($this->user)->get('/?date=' . $date);
+            $response->assertStatus(200);
+            $response->assertViewHas('date', $today);
+        }
+    }
+
     public function test_user_can_view_facility_detail_and_slots(): void
     {
         $response = $this->actingAs($this->user)->get('/facilities/' . $this->facility->id);

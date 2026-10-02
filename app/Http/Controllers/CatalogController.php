@@ -14,7 +14,7 @@ class CatalogController extends Controller
         $search = $request->input('search');
         $selectedType = $request->input('type');
         $minCapacity = $request->input('min_capacity');
-        $date = $request->input('date', Carbon::today()->format('Y-m-d'));
+        $date = $this->resolveDate($request);
 
         $query = Facility::where('status', 'aktif');
 
@@ -78,9 +78,16 @@ class CatalogController extends Controller
     {
         $today = Carbon::today()->format('Y-m-d');
 
+        $input = (string) $request->input('date', $today);
+
         try {
-            $date = Carbon::createFromFormat('Y-m-d', (string) $request->input('date', $today))->format('Y-m-d');
+            $date = Carbon::createFromFormat('!Y-m-d', $input)->format('Y-m-d');
         } catch (\Throwable) {
+            return $today;
+        }
+
+        // Tanggal yang "meluber" (mis. 2026-13-45 jadi 2027-02-14) dianggap tidak valid
+        if ($date !== $input) {
             return $today;
         }
 
