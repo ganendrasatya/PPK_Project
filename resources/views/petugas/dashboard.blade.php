@@ -215,6 +215,14 @@
                                 @if (! $reservation->proposal_kegiatan_path && ! $reservation->proposal_permohonan_path)
                                     <p class="text-sm text-gray-400 italic">Tidak ada berkas yang dilampirkan.</p>
                                 @endif
+                                @if ($reservation->status === 'approved')
+                                    <a href="{{ route('reservations.proof', $reservation) }}" target="_blank"
+                                       class="flex items-center gap-2.5 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-lg px-3 py-2.5 text-sm font-medium text-teal-800 transition-colors">
+                                        <svg class="w-5 h-5 text-teal-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6 15h1.5m-9-1.5h6" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-6-6H6a2.25 2.25 0 00-2.25 2.25v15A2.25 2.25 0 006 21h12a2.25 2.25 0 002.25-2.25V8.25z" /></svg>
+                                        <span class="flex-1 truncate">Unduh Bukti Persetujuan (PDF)</span>
+                                        <svg class="w-4 h-4 text-teal-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" /></svg>
+                                    </a>
+                                @endif
                             </div>
                         </div>
 
