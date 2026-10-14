@@ -42,9 +42,9 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         @forelse ($facilities as $facility)
             @php($meta = $statusMeta[$facility->status] ?? ['label' => ucfirst($facility->status), 'badge' => 'bg-gray-100 text-gray-600'])
-            <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition">
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col hover:shadow-md transition">
                 <!-- Facility Image / Thumbnail -->
-                <div class="relative h-44 bg-gray-100 overflow-hidden">
+                <div class="relative h-44 bg-gray-100 overflow-hidden rounded-t-xl">
                     @if ($facility->image_path)
                         <img src="{{ Storage::url($facility->image_path) }}" alt="{{ $facility->nama_fasilitas }}" class="w-full h-full object-cover">
                     @else

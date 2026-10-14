@@ -20,11 +20,16 @@ class ReservationController extends Controller
 {
     public function index(Request $request)
     {
+        $user = Auth::user();
+
+        if ($user->isAdmin()) {
+            return redirect()->route('admin.dashboard')->with('error', 'Halaman Reservasi Saya hanya untuk Pengguna. Data reservasi dapat dipantau melalui menu Rekap & Export.');
+        }
+
         Reservation::expireStalePending();
 
         $status = $request->input('status');
         $search = $request->input('search');
-        $user = Auth::user();
 
         $query = Reservation::with('facility')->where('user_id', $user->id);
 
@@ -67,6 +72,10 @@ class ReservationController extends Controller
 
     public function store(StoreReservationRequest $request)
     {
+        if (!Auth::user()->isPengguna()) {
+            abort(403, 'Hanya akun Pengguna/Mahasiswa yang dapat membuat reservasi.');
+        }
+
         $validated = $request->validated();
         $startTime = Carbon::parse($validated['date'] . ' ' . $validated['start_time']);
         $endTime = Carbon::parse($validated['date'] . ' ' . $validated['end_time']);

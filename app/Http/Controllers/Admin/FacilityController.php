@@ -52,6 +52,11 @@ class FacilityController extends Controller
         return redirect()->route('admin.facilities.index')->with('status', 'Fasilitas berhasil ditambahkan.');
     }
 
+    public function edit(Facility $facility): View
+    {
+        return view('admin.facilities.edit', compact('facility'));
+    }
+
     public function update(UpdateFacilityRequest $request, Facility $facility): RedirectResponse
     {
         $data = $request->safe()->except('image');

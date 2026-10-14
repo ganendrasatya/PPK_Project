@@ -1,11 +1,25 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🏢 Sistem Reservasi Fasilitas Kampus & Pelaporan Kerusakan
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+> 📖 **Panduan Tim & AI Coding Agent:** Silakan baca dokumen lengkap di [**`UPDATES.md`**](UPDATES.md) untuk melihat ringkasan arsitektur terkini, segmentasi hak akses peran (*Admin, Petugas, Pengguna*), rincian komponen UI (Searchable Combobox & Tab Navigasi Bebas Scroll), serta pedoman pengembangan agar terhindar dari bug regresi.
+
+---
+
+## 🚀 Kredensial Default & Akun Uji Coba
+
+Untuk keperluan demonstrasi dan pengujian lokal:
+
+| Peran | Email | Password | Keterangan |
+| :--- | :--- | :--- | :--- |
+| **Admin** | `admin@ppk.test` | `password` | Pengelolaan data fasilitas, user verifikasi, dan rekapitulasi |
+| **Petugas** | `petugas@ppk.test` | `password` | Verifikasi reservasi, tinjau proposal PDF, dan penanganan laporan kerusakan |
+| **Pengguna** | `test@example.com` | `password` | Booking fasilitas kampus dan pelaporan fasilitas rusak |
+
+Jalankan perintah pengujian kapan pun sebelum commit:
+```bash
+php artisan test
+```
+
+---
 
 ## About Laravel
 

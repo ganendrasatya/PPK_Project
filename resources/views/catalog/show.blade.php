@@ -128,13 +128,29 @@
                         <span class="flex items-center gap-2"><span class="w-4 h-4 border-2 border-gray-200 bg-gray-100 rounded"></span> Sudah Lewat</span>
                     </div>
 
-                    <button 
-                        @click="openModal()" 
-                        :disabled="!selectedSlot"
-                        :class="selectedSlot ? 'bg-teal-600 hover:bg-teal-700 shadow-md' : 'bg-gray-300 cursor-not-allowed'"
-                        class="mt-8 w-full text-white rounded-xl py-3.5 font-semibold text-center transition-colors">
-                        Lanjutkan Reservasi
-                    </button>
+                    @auth
+                        @if(auth()->user()->isAdmin())
+                            <div class="mt-8 p-4 rounded-xl bg-teal-50 border border-teal-200 text-teal-800 text-xs text-center font-medium">
+                                Anda login sebagai <strong>Admin</strong>. Pengajuan reservasi hanya diperuntukkan bagi akun Pengguna / Mahasiswa. Kelola data fasilitas melalui <a href="{{ route('admin.facilities.index') }}" class="underline font-bold text-teal-700 hover:text-teal-900">Admin Panel</a>.
+                            </div>
+                        @elseif(auth()->user()->isPetugas())
+                            <div class="mt-8 p-4 rounded-xl bg-teal-50 border border-teal-200 text-teal-800 text-xs text-center font-medium">
+                                Anda login sebagai <strong>Petugas</strong>. Pengajuan reservasi hanya diperuntukkan bagi akun Pengguna / Mahasiswa. Tinjau antrean reservasi melalui <a href="{{ route('petugas.dashboard') }}" class="underline font-bold text-teal-700 hover:text-teal-900">Dashboard Petugas</a>.
+                            </div>
+                        @else
+                            <button 
+                                @click="openModal()" 
+                                :disabled="!selectedSlot"
+                                :class="selectedSlot ? 'bg-teal-600 hover:bg-teal-700 shadow-md cursor-pointer' : 'bg-gray-300 cursor-not-allowed'"
+                                class="mt-8 w-full text-white rounded-xl py-3.5 font-semibold text-center transition-colors">
+                                Lanjutkan Reservasi
+                            </button>
+                        @endif
+                    @else
+                        <a href="{{ route('login') }}" class="mt-8 block w-full bg-teal-600 hover:bg-teal-700 text-white rounded-xl py-3.5 font-semibold text-center transition-colors shadow-md">
+                            Masuk untuk Reservasi
+                        </a>
+                    @endauth
                 </div>
             </div>
 
