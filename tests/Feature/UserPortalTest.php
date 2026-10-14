@@ -436,6 +436,23 @@ class UserPortalTest extends TestCase
             'urgency' => 'sedang',
             'status' => 'baru',
         ]);
+
+        $savedReport = Report::where('title', 'Ring Basket Rusak')->firstOrFail();
+        $this->assertNotNull($savedReport->photo_path);
+        Storage::disk('public')->assertExists($savedReport->photo_path);
+
+        // Petugas can see the photo link on manage reports page
+        $petugas = User::factory()->petugas()->create();
+        $managePage = $this->actingAs($petugas)->get('/reports');
+        $managePage->assertSee(Storage::url($savedReport->photo_path));
+    }
+
+    public function test_admin_is_redirected_from_reports_and_reservations(): void
+    {
+        $this->actingAs($this->admin)->get('/reports')->assertRedirect(route('admin.dashboard'));
+        $this->actingAs($this->admin)->get('/reservations')->assertRedirect(route('admin.dashboard'));
+        $this->actingAs($this->admin)->post('/reports', [])->assertForbidden();
+        $this->actingAs($this->admin)->post('/reservations', [])->assertForbidden();
     }
 
     public function test_user_can_view_damage_reports(): void
@@ -453,6 +470,8 @@ class UserPortalTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Laporan & Kerusakan', false);
         $response->assertSee('Lampu Mati');
+        $response->assertSee('Cari dan pilih fasilitas yang bermasalah...', false);
+        $response->assertSee($this->facility->nama_fasilitas);
     }
 
     public function test_admin_can_update_damage_report_status(): void
