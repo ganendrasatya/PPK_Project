@@ -9,7 +9,7 @@ class StoreDamageReportRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->isPengguna() ?? false;
     }
 
     public function rules(): array

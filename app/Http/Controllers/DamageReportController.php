@@ -12,8 +12,14 @@ class DamageReportController extends Controller
 {
     public function index(Request $request)
     {
-        $status = $request->input('status');
         $user = Auth::user();
+
+        // Admin diarahkan ke dashboard admin; laporan dipantau lewat menu Rekap & Export
+        if ($user->isAdmin()) {
+            return redirect()->route('admin.dashboard')->with('error', 'Halaman pelaporan hanya untuk Pengguna dan Petugas. Laporan kerusakan dapat dipantau melalui menu Rekap & Export.');
+        }
+
+        $status = $request->input('status');
 
         // Laporan Saya
         $query = Report::with('facility')->where('user_id', $user->id);
@@ -23,7 +29,7 @@ class DamageReportController extends Controller
         }
 
         $reports = $query->orderBy('created_at', 'desc')->paginate(10, ['*'], 'my_reports_page');
-        $facilities = Facility::where('status', 'aktif')->get();
+        $facilities = Facility::where('status', 'aktif')->orderBy('nama_fasilitas')->get();
 
         // Kelola Laporan Kerusakan (untuk Admin & Petugas)
         $manageStatus = $request->input('manage_status', 'menunggu');
@@ -61,6 +67,10 @@ class DamageReportController extends Controller
 
     public function store(StoreDamageReportRequest $request)
     {
+        if (!Auth::user()->isPengguna()) {
+            abort(403, 'Hanya akun Pengguna yang dapat membuat laporan kerusakan.');
+        }
+
         $validated = $request->validated();
         
         $photoPath = null;
